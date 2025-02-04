@@ -1,6 +1,12 @@
 const { expect } = require("chai");
 const { ethers } = require( "hardhat");
 
+before(async function () {
+  [owner] = await ethers.getSigners();
+  const LiquidityFactory = await ethers.getContractFactory("getLiquidityHelper");
+  getLiquidity = await LiquidityFactory.deploy();
+  await getLiquidity.waitForDeployment();
+});
 
 describe("Test MemeFactory", function () {
   it("Deploy", async function () {
@@ -11,7 +17,11 @@ describe("Test MemeFactory", function () {
     await meme.waitForDeployment();
 
     const initialOwner = (await ethers.getSigners())[0].address;
-    const instance = await ContractFactory.deploy(await meme.getAddress());
+    const instance = await ContractFactory.deploy(await meme.getAddress(), 
+                                                  "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f", 
+                                                  "0xc35DADB65012eC5796536bD9864eD8773aBc74C4",
+                                                  await getLiquidity.getAddress()
+                                                );
     await instance.waitForDeployment();
     expect(await instance.implementation()).to.equal(await meme.getAddress());
   });
@@ -26,7 +36,11 @@ describe("Test MemeFactory", function () {
     const meme = await ContractMeme.deploy();
     await meme.waitForDeployment();
 
-    const factory = await ContractFactory.deploy(await meme.getAddress());
+    const factory = await ContractFactory.deploy( await meme.getAddress(), 
+                                                  "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f", 
+                                                  "0xc35DADB65012eC5796536bD9864eD8773aBc74C4",
+                                                  await getLiquidity.getAddress()
+    );
     await factory.waitForDeployment();
 
     const initialSupply = 10;
@@ -58,7 +72,12 @@ describe("Test MemeFactory", function () {
     const meme_v2 = await ContractMemeV2.deploy();
     await meme_v2.waitForDeployment();
 
-    const factory = await ContractFactory.deploy(await meme_v1.getAddress());
+    const factory = await ContractFactory.deploy( await meme_v1.getAddress(),
+                                                  "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f", 
+                                                  "0xc35DADB65012eC5796536bD9864eD8773aBc74C4",
+                                                  await getLiquidity.getAddress()
+                                                );
+                                                
     await factory.waitForDeployment();
 
     const initialSupply = 10;

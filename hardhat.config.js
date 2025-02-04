@@ -5,19 +5,38 @@ require("dotenv").config(); // Подключаем dotenv для загрузк
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.23",
-    settings: {
-      evmVersion: "paris", // Указываем версию EVM
-      optimizer: {
-        enabled: true,
-        runs: 1000,
-      }, 
-    }
-  },
+    compilers: [
+      {
+        version: "0.8.23",
+        settings: {
+          evmVersion: "paris",
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          }, 
+        }
+      },
+      {
+        version: "0.7.6",  
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          }, 
+        }
+      },
+    ],
+  },  
   networks: {
     local: {
       url: `http://127.0.0.1:7545`,
       accounts: [process.env.PRIVATE_KEY] // Загружаем PRIVATE_KEY из переменных окружения
+    },
+    hardhat: {
+      forking: {
+        url: "https://rpc.eth.haqq.network", 
+        blockNumber: 15255512, 
+      },
     },
     haqq_test: {
       url: `https://rpc.eth.testedge2.haqq.network`,
