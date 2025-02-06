@@ -33,9 +33,13 @@ module.exports = {
       accounts: [process.env.PRIVATE_KEY] // Загружаем PRIVATE_KEY из переменных окружения
     },
     hardhat: {
-      forking: {
+    /* forking: {
         url: "https://rpc.eth.haqq.network", 
         blockNumber: 15255512, 
+      },*/
+      forking: {
+        url: "https://sepolia.drpc.org", 
+        blockNumber: 7649193, 
       },
     },
     haqq_test: {
