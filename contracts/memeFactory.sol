@@ -5,10 +5,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
-
 import "./erc20meme.sol";
 
 interface iLiquidity {
@@ -30,8 +26,8 @@ contract MemeFactory {
     }
 
     struct PoolData {
-        IV3SwapRouter swapRouter;
-        IUniswapV3Factory factory;
+        address swapRouter;
+        address factory;
         address getLiquidity;
         PoolConfig config;
     }
@@ -59,15 +55,15 @@ contract MemeFactory {
         implementation = _initialImplementation;
 
         pool = PoolData({
-            swapRouter: IV3SwapRouter(swapRouterAddress),
-            factory: IUniswapV3Factory(factoryAddress),
+            swapRouter: swapRouterAddress,
+            factory: factoryAddress,
             getLiquidity: _getLiquidity,
             config: PoolConfig({
                 fee: 3000,
                 tickSpacing: 60,
                 minTick: -887272,
                 maxTick: 887272,
-                initialSupply: 1000000
+                initialSupply: 10
             })
         });
     }
@@ -86,16 +82,19 @@ contract MemeFactory {
             implementation,
             address(this),
             abi.encodeWithSignature(
-                "initialize(string,string,uint256,address)",
+                "initialize(string,string,uint256,address,address,address,address)",
                 name,
                 symbol,
                 pool.config.initialSupply,
-                pool.getLiquidity
+                pool.getLiquidity,
+                tokenPair,
+                pool.swapRouter,
+                pool.factory
             )
         );
         address proxyAddress = address(proxy);
         IERC20(tokenPair).approve(proxyAddress, 2 ** 256 - 1);
-        ERC20MEME(proxyAddress).initializePool(tokenPair);
+        ERC20MEME(proxyAddress).initializePool();
         memelist[memeid] = proxyAddress;
         emit ERC20Created(proxyAddress);
         return proxyAddress;

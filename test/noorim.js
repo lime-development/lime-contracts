@@ -56,41 +56,41 @@ describe("Test MemeFactory", function () {
     await instance.waitForDeployment();
     expect(await instance.implementation()).to.equal(await meme.getAddress());
   });
-/*
-  it("Manual liquidity test", async function () {
-    const liquidityHelper = await ethers.getContractFactory("getLiquidityHelper");
-    const iquidity = await liquidityHelper.deploy();
-    await iquidity.waitForDeployment();
-
-    const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
-
-    const MyTokenUpgradeable = await ethers.getContractFactory("ERC20MEME");
-    logic = await MyTokenUpgradeable.deploy();
-    await logic.waitForDeployment();
-
-    const TransparentUpgradeableProxy = await ethers.getContractFactory("TransparentUpgradeableProxy");
-    const proxyAdmin = owner.address; // Админ прокси
-    const initialSupply = 1000000;
-    const initData = logic.interface.encodeFunctionData("initialize",
-      ["MyToken", "MTK", initialSupply, await iquidity.getAddress()]);
-
-
-    proxy = await TransparentUpgradeableProxy.deploy(
-      await logic.getAddress(),
-      proxyAdmin,
-      initData
-    );
-    await proxy.waitForDeployment();
-
-    token = await MyTokenUpgradeable.attach(await proxy.getAddress());
-
-    await wISLM.approve(token.getAddress(), MaxUint256);
-    await token.initializePool(await wISLM.getAddress());
-    pool = await token.pool();
-    expect(await token.balanceOf(pool)).to.equal(initialSupply);
-
-  });
-*/
+  /*
+    it("Manual liquidity test", async function () {
+      const liquidityHelper = await ethers.getContractFactory("getLiquidityHelper");
+      const iquidity = await liquidityHelper.deploy();
+      await iquidity.waitForDeployment();
+  
+      const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
+  
+      const MyTokenUpgradeable = await ethers.getContractFactory("ERC20MEME");
+      logic = await MyTokenUpgradeable.deploy();
+      await logic.waitForDeployment();
+  
+      const TransparentUpgradeableProxy = await ethers.getContractFactory("TransparentUpgradeableProxy");
+      const proxyAdmin = owner.address; // Админ прокси
+      const initialSupply = 1000000;
+      const initData = logic.interface.encodeFunctionData("initialize",
+        ["MyToken", "MTK", initialSupply, await iquidity.getAddress()]);
+  
+  
+      proxy = await TransparentUpgradeableProxy.deploy(
+        await logic.getAddress(),
+        proxyAdmin,
+        initData
+      );
+      await proxy.waitForDeployment();
+  
+      token = await MyTokenUpgradeable.attach(await proxy.getAddress());
+  
+      await wISLM.approve(token.getAddress(), MaxUint256);
+      await token.initializePool(await wISLM.getAddress());
+      pool = await token.pool();
+      expect(await token.balanceOf(pool)).to.equal(initialSupply);
+  
+    });
+  */
 
   it("Create Meme", async function () {
     const ContractFactory = await ethers.getContractFactory("MemeFactory");
@@ -114,10 +114,10 @@ describe("Test MemeFactory", function () {
     const tx = await factory.createERC20("Test", "Test", wEthAddress);
     const receipt = await tx.wait();
     const newMEME = await ethers.getContractAt("ERC20MEME", await factory.memelist(1));
-    /*console.log("Meme Meme balance", await newMEME.balanceOf(newMEME.getAddress()));  
-    console.log("Meme wETH balance", await wISLM.balanceOf(newMEME.getAddress())); 
-    console.log("Pool Meme balance", );  
-    console.log("Pool wETH balance", await wISLM.balanceOf(newMEME.pool())); */
+    //console.log("Meme Meme balance", await newMEME.balanceOf(newMEME.getAddress()));  
+    //console.log("Meme wETH balance", await wISLM.balanceOf(newMEME.getAddress())); 
+    //console.log("Pool Meme balance", );  
+    //console.log("Pool wETH balance", await wISLM.balanceOf(newMEME.pool())); 
     expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getPoolData()).config.initialSupply);
   });
 
@@ -128,7 +128,6 @@ describe("Test MemeFactory", function () {
 
     const [owner] = await ethers.getSigners();
 
-    // Деплой фабрики
     const meme_v1 = await ContractMemeV1.deploy();
     await meme_v1.waitForDeployment();
 
