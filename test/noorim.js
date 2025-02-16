@@ -118,7 +118,7 @@ describe("Test MemeFactory", function () {
     //console.log("Meme wETH balance", await wISLM.balanceOf(newMEME.getAddress())); 
     //console.log("Pool Meme balance", );  
     //console.log("Pool wETH balance", await wISLM.balanceOf(newMEME.pool())); 
-    expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getPoolData()).config.initialSupply);
+    expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply);
   });
 
   it("Update Meme Implementation", async function () {
@@ -149,12 +149,12 @@ describe("Test MemeFactory", function () {
     const tx = await factory.createERC20("Test1", "Test1", wEthAddress);
     const receipt = await tx.wait();
     const mem_v1 = await ethers.getContractAt("ERC20MEME", await factory.memelist(1));
-    expect(await mem_v1.balanceOf(mem_v1.pool())).to.equal((await factory.getPoolData()).config.initialSupply);
+    expect(await mem_v1.balanceOf(mem_v1.pool())).to.equal((await factory.getConfig()).initialSupply);
 
     const tx2 = await factory.createERC20("Test2", "Test2", wEthAddress);
     await tx2.wait();
     const mem_v2 = await ethers.getContractAt("ERC20MEME", await factory.memelist(2));
-    expect(await mem_v2.balanceOf(mem_v2.pool())).to.equal((await factory.getPoolData()).config.initialSupply);
+    expect(await mem_v2.balanceOf(mem_v2.pool())).to.equal((await factory.getConfig()).initialSupply);
 
     const tokenAddress = await factory.memelist(2);
     const ERC20 = await ethers.getContractFactory("ERC20MEME_V2");

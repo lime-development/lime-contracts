@@ -7,29 +7,22 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./erc20meme.sol";
 
-interface iLiquidity {
-    function getLiquidity(
-        uint256 amount0,
-        uint256 amount1
-    ) external pure returns (uint128 liquidity);
-
-    function sqrt(uint256 x) external pure returns (uint256);
-}
-
 contract MemeFactory {
+
     struct PoolConfig {
         uint24 fee; // Fee tier (e.g., 3000 = 0.3%)
-        int24 tickSpacing; // Tick spacing
-        int24 minTick;
-        int24 maxTick;
-        uint256 initialSupply;
+        int24  tickSpacing; // Tick spacing
+        int24  minTick;
+        int24  maxTick;
     }
 
-    struct PoolData {
+    struct TokenConfig {
         address swapRouter;
         address factory;
         address getLiquidity;
-        PoolConfig config;
+        uint256 initialSupply;
+        PoolConfig pool;
+        uint256 fee;
     }
 
     event ERC20Created(address proxy);
@@ -44,7 +37,7 @@ contract MemeFactory {
     address private _token0;
     address private _token1;
 
-    PoolData public pool;
+    TokenConfig public config;
 
     constructor(
         address _initialImplementation,
@@ -54,22 +47,23 @@ contract MemeFactory {
     ) {
         implementation = _initialImplementation;
 
-        pool = PoolData({
+        config = TokenConfig({
             swapRouter: swapRouterAddress,
             factory: factoryAddress,
             getLiquidity: _getLiquidity,
-            config: PoolConfig({
+            initialSupply: 10,
+            fee: 0,
+            pool: PoolConfig({
                 fee: 3000,
                 tickSpacing: 60,
                 minTick: -887272,
-                maxTick: 887272,
-                initialSupply: 10
+                maxTick: 887272
             })
         });
     }
 
-    function getPoolData() external view returns (PoolData memory) {
-        return pool;
+    function getConfig() external view returns (TokenConfig memory) {
+        return config;
     }
 
     function createERC20(
@@ -85,11 +79,11 @@ contract MemeFactory {
                 "initialize(string,string,uint256,address,address,address,address)",
                 name,
                 symbol,
-                pool.config.initialSupply,
-                pool.getLiquidity,
+                config.initialSupply,
+                config.getLiquidity,
                 tokenPair,
-                pool.swapRouter,
-                pool.factory
+                config.swapRouter,
+                config.factory
             )
         );
         address proxyAddress = address(proxy);

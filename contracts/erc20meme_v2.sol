@@ -74,7 +74,7 @@ contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ER
         uint256 toPool = swapRouter.exactInputSingle(IV3SwapRouter.ExactInputSingleParams ({
         tokenIn:  address(pairedToken),
         tokenOut: address(this),
-        fee: memeFactory.getPoolData().config.fee,
+        fee: poolFee,
         recipient: address(this),
         amountIn: withdrow,
         amountOutMinimum: 0,
