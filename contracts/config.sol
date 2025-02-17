@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract Config {
+    struct Pool {
+        uint24 fee; 
+        int24  tickSpacing;
+        int24  minTick;
+        int24  maxTick;
+    }
+
+    struct Token {
+        address swapRouter;
+        address factory;
+        address getLiquidity;
+        uint256 initialSupply;
+        Pool pool;
+        uint256 fee;
+    }
+}

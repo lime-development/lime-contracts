@@ -6,24 +6,9 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./erc20meme.sol";
+import "./config.sol";
 
 contract MemeFactory {
-
-    struct PoolConfig {
-        uint24 fee; // Fee tier (e.g., 3000 = 0.3%)
-        int24  tickSpacing; // Tick spacing
-        int24  minTick;
-        int24  maxTick;
-    }
-
-    struct TokenConfig {
-        address swapRouter;
-        address factory;
-        address getLiquidity;
-        uint256 initialSupply;
-        PoolConfig pool;
-        uint256 fee;
-    }
 
     event ERC20Created(address proxy);
     event ERC20Upgraded(address proxy, address newImplementation);
@@ -37,7 +22,7 @@ contract MemeFactory {
     address private _token0;
     address private _token1;
 
-    TokenConfig public config;
+    Config.Token public config;
 
     constructor(
         address _initialImplementation,
@@ -47,13 +32,13 @@ contract MemeFactory {
     ) {
         implementation = _initialImplementation;
 
-        config = TokenConfig({
+        config = Config.Token({
             swapRouter: swapRouterAddress,
             factory: factoryAddress,
             getLiquidity: _getLiquidity,
             initialSupply: 10,
             fee: 0,
-            pool: PoolConfig({
+            pool: Config.Pool({
                 fee: 3000,
                 tickSpacing: 60,
                 minTick: -887272,
@@ -62,7 +47,7 @@ contract MemeFactory {
         });
     }
 
-    function getConfig() external view returns (TokenConfig memory) {
+    function getConfig() external view returns (Config.Token memory) {
         return config;
     }
 
@@ -76,14 +61,11 @@ contract MemeFactory {
             implementation,
             address(this),
             abi.encodeWithSignature(
-                "initialize(string,string,uint256,address,address,address,address)",
+                "initialize(string,string,uint256,address)",
                 name,
                 symbol,
                 config.initialSupply,
-                config.getLiquidity,
-                tokenPair,
-                config.swapRouter,
-                config.factory
+                tokenPair
             )
         );
         address proxyAddress = address(proxy);
