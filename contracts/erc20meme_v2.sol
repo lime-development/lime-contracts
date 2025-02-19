@@ -12,9 +12,9 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
-import "./memeFactory.sol";
+import "./interfaces/IMemeFactory.sol";
 import "./config.sol";
-import "./igetLiqudity.sol";
+import "./interfaces/igetLiqudity.sol";
 
 contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ERC20PermitUpgradeable, UUPSUpgradeable, ERC20BurnableUpgradeable {
     event Mint(address to, uint256 amount, uint256 spended);
@@ -23,7 +23,7 @@ contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ER
 
     Config.Token public config;
 
-    MemeFactory public memeFactory;
+    IMemeFactory public memeFactory;
     address public pool;
     address public pairedToken;
 
@@ -42,7 +42,7 @@ contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ER
         __Ownable_init(msg.sender);
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
-        config = MemeFactory(msg.sender).getConfig();
+        config = IMemeFactory(msg.sender).getConfig();
         _mint(address(this), initialSupply_);
         pairedToken = pairedToken_;
     }
@@ -133,17 +133,17 @@ contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ER
         uint256 withdrow = calculateValue(totalSupply());
 
         require(
-            ERC20MEME(pairedToken).allowance(msg.sender, address(this)) >= withdrow,
+            ERC20MEME_V2(pairedToken).allowance(msg.sender, address(this)) >= withdrow,
             "Factory allowance lower than InitialSupply"
         );
 
         require(
-            (ERC20MEME(pairedToken).balanceOf(msg.sender) > withdrow),
+            ERC20MEME_V2(pairedToken).balanceOf(msg.sender) > withdrow,
             "Transfer token from factory failed"
         );
 
         require(
-            ERC20MEME(pairedToken).transferFrom(msg.sender, address(this), withdrow),
+            ERC20MEME_V2(pairedToken).transferFrom(msg.sender, address(this), withdrow),
             "Transfer token from factory failed"
         );
 

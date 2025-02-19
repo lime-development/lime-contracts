@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { MaxUint256 } = require("ethers");
-const { ethers } = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 
 //HAQQ Mainnet
 /*
@@ -36,25 +36,22 @@ before(async function () {
   const whaleSigner = await ethers.getSigner(wEthWhale);
   const transferAmount = ethers.parseUnits("312", 18); // 1 Weth
   await Weth.connect(whaleSigner).transfer(owner.address, transferAmount);
+
+  const ContractMeme = await ethers.getContractFactory("ERC20MEME");
+
+  meme = await ContractMeme.deploy();
+  await meme.waitForDeployment();
+
+  MemeFactory = await ethers.getContractFactory("MemeFactory");
+  factory = await upgrades.deployProxy( MemeFactory,
+    [await meme.getAddress(), swapRouterAddress, factoryAddress, await getLiquidity.getAddress()]
+  );
+  await factory.waitForDeployment();
 });
 
 describe("Test MemeFactory", function () {
-  this.timeout(4000000);
   it("Deploy", async function () {
-    const ContractFactory = await ethers.getContractFactory("MemeFactory");
-    const ContractMeme = await ethers.getContractFactory("ERC20MEME");
-
-    const meme = await ContractMeme.deploy();
-    await meme.waitForDeployment();
-
-    const initialOwner = (await ethers.getSigners())[0].address;
-    const instance = await ContractFactory.deploy(await meme.getAddress(),
-      swapRouterAddress,
-      factoryAddress,
-      await getLiquidity.getAddress()
-    );
-    await instance.waitForDeployment();
-    expect(await instance.implementation()).to.equal(await meme.getAddress());
+    expect(await factory.implementation()).to.equal(await meme.getAddress());
   });
   /*
     it("Manual liquidity test", async function () {
@@ -93,24 +90,9 @@ describe("Test MemeFactory", function () {
   */
 
   it("Create Meme", async function () {
-    const ContractFactory = await ethers.getContractFactory("MemeFactory");
-    const ContractMeme = await ethers.getContractFactory("ERC20MEME");
-
-    const [owner] = await ethers.getSigners();
-
-    const meme = await ContractMeme.deploy();
-    await meme.waitForDeployment();
-
-    const factory = await ContractFactory.deploy(await meme.getAddress(),
-      swapRouterAddress,
-      factoryAddress,
-      await getLiquidity.getAddress()
-    );
-
-    await factory.waitForDeployment();
     const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
     await wISLM.approve(factory.getAddress(), MaxUint256);
-    
+
     const tx = await factory.createERC20("Test", "Test", wEthAddress);
     const receipt = await tx.wait();
     const newMEME = await ethers.getContractAt("ERC20MEME", await factory.memelist(1));
@@ -122,25 +104,14 @@ describe("Test MemeFactory", function () {
   });
 
   it("Update Meme Implementation", async function () {
-    const ContractFactory = await ethers.getContractFactory("MemeFactory");
     const ContractMemeV1 = await ethers.getContractFactory("ERC20MEME");
     const ContractMemeV2 = await ethers.getContractFactory("ERC20MEME_V2");
-
-    const [owner] = await ethers.getSigners();
 
     const meme_v1 = await ContractMemeV1.deploy();
     await meme_v1.waitForDeployment();
 
     const meme_v2 = await ContractMemeV2.deploy();
     await meme_v2.waitForDeployment();
-
-    const factory = await ContractFactory.deploy(await meme_v1.getAddress(),
-      swapRouterAddress,
-      factoryAddress,
-      await getLiquidity.getAddress()
-    );
-
-    await factory.waitForDeployment();
 
     const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
     await wISLM.approve(factory.getAddress(), MaxUint256);

@@ -7,7 +7,7 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 import "./config.sol";
-import "./igetLiqudity.sol";
+import "./interfaces/igetLiqudity.sol";
 
 contract ERC20PoolV3 is Initializable {
     event PoolCreated(address token0, address token1, address pool);

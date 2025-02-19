@@ -1,37 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-import "./erc20meme.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+import "./interfaces/IERC20MEME.sol";
 import "./config.sol";
 
-contract MemeFactory {
-
+contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable{
     event ERC20Created(address proxy);
     event ERC20Upgraded(address proxy, address newImplementation);
-    event Debug(address t0, uint256 token0, address t1, uint256 token1);
-    event Debug2(address t0, uint256 token0, address t1, uint256 token1);
 
     mapping(uint256 => address) public memelist;
     mapping(address => address) public pools;
     uint256 public memeid;
     address public implementation;
-    address private _token0;
-    address private _token1;
 
     Config.Token public config;
 
-    constructor(
+    function initialize(
         address _initialImplementation,
         address swapRouterAddress,
         address factoryAddress,
         address _getLiquidity
-    ) {
+    ) public initializer {
+        __Ownable_init(msg.sender); 
         implementation = _initialImplementation;
-
         config = Config.Token({
             swapRouter: swapRouterAddress,
             factory: factoryAddress,
@@ -48,6 +47,12 @@ contract MemeFactory {
         });
     }
 
+  /*  constructor() {
+        _disableInitializers();
+    }
+*/
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
     function getConfig() external view returns (Config.Token memory) {
         return config;
     }
@@ -58,9 +63,8 @@ contract MemeFactory {
         address tokenPair
     ) public returns (address) {
         memeid++;
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+        ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,
-            address(this),
             abi.encodeWithSignature(
                 "initialize(string,string,uint256,address)",
                 name,
@@ -71,16 +75,22 @@ contract MemeFactory {
         );
         address proxyAddress = address(proxy);
         uint256 toPool = config.initialMintCost**ERC20(tokenPair).decimals();
-        uint256 procolFee = (toPool * config.protocolFee) / 100000;
-        require(IERC20(tokenPair).transferFrom(msg.sender, proxyAddress, toPool),"Error transferring funds to pool creation.");
-        require(IERC20(tokenPair).transferFrom(msg.sender, address(this), procolFee),"Error in transferring funds");
-        ERC20MEME(proxyAddress).initializePool();
+        uint256 protocolFee = (toPool * config.protocolFee) / 100000;
+        require(
+            IERC20(tokenPair).transferFrom(msg.sender, proxyAddress, toPool),
+            "Error transferring funds to pool creation."
+        );
+        require(
+            IERC20(tokenPair).transferFrom(msg.sender, address(this), protocolFee),
+            "Error in transferring funds"
+        );
+        IERC20MEME(proxyAddress).initializePool();
         memelist[memeid] = proxyAddress;
         emit ERC20Created(proxyAddress);
         return proxyAddress;
     }
 
-    function updateImplementation(address newImplementation) external {
+    function updateImplementation(address newImplementation) external onlyOwner {
         implementation = newImplementation;
         for (uint256 i = 1; i <= memeid; i++) {
             address proxy = memelist[i];
@@ -90,5 +100,9 @@ contract MemeFactory {
             );
             emit ERC20Upgraded(proxy, newImplementation);
         }
+    }
+
+    function version() public pure returns (string memory) {
+        return "0.1.0";
     }
 }

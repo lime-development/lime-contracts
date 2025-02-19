@@ -11,9 +11,9 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
-import "./memeFactory.sol";
+import "./interfaces/IMemeFactory.sol";
 import "./config.sol";
-import "./igetLiqudity.sol";
+import "./interfaces/igetLiqudity.sol";
 import "./ERC20PoolV3.sol";
 
 contract ERC20MEME is
@@ -25,7 +25,6 @@ contract ERC20MEME is
     ERC20PoolV3
 {
     event Mint(address to, uint256 amount, uint256 spended);
-    MemeFactory public memeFactory;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -42,7 +41,7 @@ contract ERC20MEME is
         __Ownable_init(msg.sender);
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
-        __ERC20PoolV3_init(pairedToken_, MemeFactory(msg.sender).getConfig());
+        __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), initialSupply_**decimals());
     }
 
@@ -125,4 +124,8 @@ contract ERC20MEME is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    function version() public pure returns (string memory) {
+        return "0.1.1";
+    }
 }
