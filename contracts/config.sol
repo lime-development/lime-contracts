@@ -14,7 +14,8 @@ contract Config {
         address factory;
         address getLiquidity;
         uint256 initialSupply;
+        uint256 initialMintCost;
         Pool pool;
-        uint256 fee;
+        uint256 protocolFee;
     }
 }

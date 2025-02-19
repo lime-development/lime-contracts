@@ -13,20 +13,19 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
 import "./memeFactory.sol";
+import "./config.sol";
+import "./igetLiqudity.sol";
 
 contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ERC20PermitUpgradeable, UUPSUpgradeable, ERC20BurnableUpgradeable {
+    event Mint(address to, uint256 amount, uint256 spended);
+    event PoolCreated(address token0, address token1, address pool);
+    event TokenInitialized(address pairedToken, address pool);
+
+    Config.Token public config;
+
     MemeFactory public memeFactory;
     address public pool;
-    address public getLiquidity;
     address public pairedToken;
-
-    IV3SwapRouter swapRouter;
-    IUniswapV3Factory factory;
-
-    uint24  public constant poolFee = 3000 ; // Fee tier (e.g., 3000 = 0.3%)
-    int24 public constant TICK_SPACING = 60; // примерное значение
-    int24 internal constant MIN_TICK = -887272;
-    int24 internal constant MAX_TICK = -MIN_TICK;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -37,64 +36,92 @@ contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ER
         string memory name,
         string memory symbol,
         uint256 initialSupply_,
-        address getLiquidity_,
-        address pairedToken_,
-        address swapRouter_,
-        address factory_
-
+        address pairedToken_
     ) public initializer {
         __ERC20_init(name, symbol);
         __Ownable_init(msg.sender);
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
-        getLiquidity = getLiquidity_;
-        memeFactory = MemeFactory(msg.sender);
+        config = MemeFactory(msg.sender).getConfig();
         _mint(address(this), initialSupply_);
         pairedToken = pairedToken_;
-        swapRouter = IV3SwapRouter(swapRouter_);
-        factory = IUniswapV3Factory(factory_);
     }
 
     function decimals() public view virtual override returns (uint8) {
         return 6;
     }
 
-    function mint(address to, uint256 amount) public {  
-        require(pairedToken!=address(0), "The token must be initialized");
-        uint256 withdrow = calculateValue(totalSupply()+amount)-calculateValue(totalSupply());
-        require(withdrow > 0 , "The withdrowAmount greater than zero is required for a mint.");
-    
+    function mint(address to, uint256 amount) public {
+        require(
+            ((pairedToken != address(0)) && (pool != address(0))),
+            "The token must be initialized"
+        );
+        (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
+        uint256 withdrow = poolAmount + protocolFee;
+        require(
+            withdrow > 0,
+            "The withdrowAmount greater than zero is required for a mint."
+        );
 
-        require(IERC20(pairedToken).balanceOf(msg.sender) >= withdrow, "Insufficient BTC balance");
-        require(IERC20(pairedToken).allowance(msg.sender,address(this)) >= withdrow, "No BTC allowance has been issued");
-        require(IERC20(pairedToken).transferFrom(msg.sender, address(this),withdrow), "Transfer WBTC failed");
+        require(
+            IERC20(pairedToken).balanceOf(msg.sender) >= withdrow,
+            "Insufficient token balance"
+        );
+        require(
+            IERC20(pairedToken).allowance(msg.sender, address(this)) >= withdrow,
+            "No token allowance has been issued"
+        );
+        require(
+            IERC20(pairedToken).transferFrom(msg.sender, address(this), poolAmount),
+            "Transfer token failed"
+        );
+        require(
+            IERC20(pairedToken).transferFrom(msg.sender, owner(), protocolFee),
+            "Transfer token failed"
+        );
 
-        IERC20(pairedToken).approve(address(swapRouter), withdrow);
-        
-        uint256 toPool = swapRouter.exactInputSingle(IV3SwapRouter.ExactInputSingleParams ({
-        tokenIn:  address(pairedToken),
-        tokenOut: address(this),
-        fee: poolFee,
-        recipient: address(this),
-        amountIn: withdrow,
-        amountOutMinimum: 0,
-        sqrtPriceLimitX96:0
-        }));
-        require(toPool>0, "Swap to mint failed");
+        IERC20(pairedToken).approve(config.swapRouter, poolAmount);
+
+        uint256 toPool = IV3SwapRouter(config.swapRouter).exactInputSingle(
+            IV3SwapRouter.ExactInputSingleParams({
+                tokenIn: address(pairedToken),
+                tokenOut: address(this),
+                fee: config.pool.fee,
+                recipient: address(this),
+                amountIn: poolAmount,
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            })
+        );
+        require(toPool > 0, "Swap to mint failed");
 
         _burn(address(this), toPool);
         _mint(to, amount);
+
+        emit Mint(to, amount, withdrow);
     }
-    
+
+    function calculatePrice(
+        uint256 amount
+    ) public view returns (uint256 poolAmount, uint256 protocolFee) {
+        poolAmount =
+            calculateValue(totalSupply() + amount) - calculateValue(totalSupply());
+        protocolFee = (poolAmount * config.protocolFee) / 100000;
+    }
+
     /// factorial X^2 = 1/3 * X^3
     function calculateValue(
         uint256 amount
     ) public view returns (uint256 _price) {
         uint8 externalDecimals = ERC20Upgradeable(pairedToken).decimals();
-        if(externalDecimals>decimals()){
-            _price = (amount * amount * amount / 3)*10**(externalDecimals-decimals());
+        if (externalDecimals > decimals()) {
+            _price =
+                ((amount * amount) / 2) *
+                10 ** (externalDecimals - decimals());
         } else {
-            _price = (amount * amount * amount / 3)/10**(decimals()-externalDecimals);
+            _price =
+                ((amount * amount) / 2) /
+                10 ** (decimals() - externalDecimals);
         }
         return _price;
     }
@@ -122,8 +149,9 @@ contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ER
 
         createPool();
         addInitialLiquidity();
+        emit TokenInitialized(pairedToken, pool);
     }
-    
+
     function createPool() internal {
         (address token0, address token1) = address(this) < pairedToken
             ? (address(this), pairedToken)
@@ -135,30 +163,40 @@ contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ER
         uint256 amount1 = IERC20(token1).balanceOf(address(this));
         require(amount1 > 0, "Amount of token1 must be greater than 0");
 
-        pool = factory.getPool(
+        pool = IUniswapV3Factory(config.factory).getPool(
             token0,
             token1,
-            3000
+            config.pool.fee
         );
         if (pool == address(0)) {
-            pool = factory.createPool(
+            pool = IUniswapV3Factory(config.factory).createPool(
                 token1,
                 token0,
-                3000
+                config.pool.fee
             );
             require(pool != address(0), "Failed to create the pool");
         }
+        emit PoolCreated(token0, token1, pool);
 
         (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
         if (sqrtPriceX96 == 0) {
-            sqrtPriceX96 = igetLiquidity(getLiquidity).getSqrtPriceX96(amount1,amount0);
+            sqrtPriceX96 = igetLiquidity(config.getLiquidity).getSqrtPriceX96(
+                amount1,
+                amount0
+            );
             IUniswapV3Pool(pool).initialize(sqrtPriceX96);
             (uint160 newSqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool)
                 .slot0();
             require(newSqrtPriceX96 != 0, "Failed to initialize the pool");
         }
     }
-    function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata data) public {
+
+    function uniswapV3MintCallback(
+        uint256 amount0,
+        uint256 amount1,
+        bytes calldata data
+    ) public {
+        require(msg.sender == pool, "Callback must be from pool");
         (address token0, address token1) = abi.decode(data, (address, address));
         IERC20(address(token0)).transfer(msg.sender, amount0);
         IERC20(address(token1)).transfer(msg.sender, amount1);
@@ -166,8 +204,8 @@ contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ER
 
     function addInitialLiquidity() internal {
         (address token0, address token1) = address(this) < pairedToken
-        ? (address(this), pairedToken)
-         : (pairedToken, address(this));
+            ? (address(this), pairedToken)
+            : (pairedToken, address(this));
 
         uint256 amount0 = IERC20(token0).balanceOf(address(this));
         require(amount0 > 0, "Amount of token0 must be greater than 0");
@@ -177,18 +215,24 @@ contract ERC20MEME_V2 is Initializable, ERC20Upgradeable, OwnableUpgradeable, ER
         require(amount1 > 0, "Amount of token1 must be greater than 0");
         IERC20(token1).approve(pool, amount1);
 
-        require(getLiquidity !=  address(0), "getLiquidity must be");
-        require(pool !=  address(0), "pool must be");
-        uint128 liquidityAmount = igetLiquidity(getLiquidity).getLiquidity(amount1, amount0);
+        require(config.getLiquidity != address(0), "getLiquidity must be");
+        require(pool != address(0), "pool must be");
+        uint128 liquidityAmount = igetLiquidity(config.getLiquidity)
+            .getLiquidity(amount0, amount1);
 
-       IUniswapV3Pool(pool).mint(
+        IUniswapV3Pool(pool).mint(
             address(this),
-            (MIN_TICK / TICK_SPACING) * TICK_SPACING,
-            (MAX_TICK / TICK_SPACING) * TICK_SPACING,
+            (config.pool.minTick / config.pool.tickSpacing) *
+                config.pool.tickSpacing,
+            (config.pool.maxTick / config.pool.tickSpacing) *
+                config.pool.tickSpacing,
             liquidityAmount,
             abi.encode(token0, token1)
         );
-        require(IUniswapV3Pool(pool).liquidity() > 0, "AddInitialLiquidity falt");
+        require(
+            IUniswapV3Pool(pool).liquidity() > 0,
+            "AddInitialLiquidity falt"
+        );
     }
 
     function _authorizeUpgrade(

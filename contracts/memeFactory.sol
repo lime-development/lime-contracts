@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./erc20meme.sol";
 import "./config.sol";
@@ -37,7 +37,8 @@ contract MemeFactory {
             factory: factoryAddress,
             getLiquidity: _getLiquidity,
             initialSupply: 10,
-            fee: 0,
+            protocolFee: 3000,
+            initialMintCost: 1,
             pool: Config.Pool({
                 fee: 3000,
                 tickSpacing: 60,
@@ -55,7 +56,7 @@ contract MemeFactory {
         string memory name,
         string memory symbol,
         address tokenPair
-    ) external returns (address) {
+    ) public returns (address) {
         memeid++;
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             implementation,
@@ -69,7 +70,10 @@ contract MemeFactory {
             )
         );
         address proxyAddress = address(proxy);
-        IERC20(tokenPair).approve(proxyAddress, 2 ** 256 - 1);
+        uint256 toPool = config.initialMintCost**ERC20(tokenPair).decimals();
+        uint256 procolFee = (toPool * config.protocolFee) / 100000;
+        require(IERC20(tokenPair).transferFrom(msg.sender, proxyAddress, toPool),"Error transferring funds to pool creation.");
+        require(IERC20(tokenPair).transferFrom(msg.sender, address(this), procolFee),"Error in transferring funds");
         ERC20MEME(proxyAddress).initializePool();
         memelist[memeid] = proxyAddress;
         emit ERC20Created(proxyAddress);
