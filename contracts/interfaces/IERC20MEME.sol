@@ -29,5 +29,5 @@ interface IERC20MEME {
 
     function calculateValue(uint256 amount) external view returns (uint256 _price);
 
-    function version() external pure returns (string memory);
+    function version() external view returns (bytes32);
 }

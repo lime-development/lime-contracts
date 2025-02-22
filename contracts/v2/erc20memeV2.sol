@@ -11,20 +11,18 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
-import "./interfaces/IMemeFactory.sol";
-import "./config.sol";
-import "./interfaces/igetLiqudity.sol";
-import "./ERC20PoolV3.sol";
-import "./Versioned.sol";
+import "../interfaces/IMemeFactory.sol";
+import "../config.sol";
+import "../interfaces/igetLiqudity.sol";
+import "../ERC20PoolV3.sol";
 
-contract ERC20MEME is
+contract ERC20MEMEV2 is
     Initializable,
     ERC20Upgradeable,
     OwnableUpgradeable,
     ERC20PermitUpgradeable,
     UUPSUpgradeable,
-    ERC20PoolV3,
-    Versioned 
+    ERC20PoolV3
 {
     event Mint(address to, uint256 amount, uint256 spended);
 
@@ -113,11 +111,11 @@ contract ERC20MEME is
         uint8 externalDecimals = ERC20Upgradeable(pairedToken).decimals();
         if (externalDecimals > decimals()) {
             _price =
-                ((amount * amount * amount) / 30000000 ) *
+                ((amount * amount) / 2) *
                 10 ** (externalDecimals - decimals());
         } else {
             _price =
-                ((amount * amount * amount) / 30000000 ) /
+                ((amount * amount) / 2) /
                 10 ** (decimals() - externalDecimals);
         }
         return _price;
@@ -126,4 +124,8 @@ contract ERC20MEME is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    function version() public pure returns (string memory) {
+        return "2.1.1";
+    }
 }

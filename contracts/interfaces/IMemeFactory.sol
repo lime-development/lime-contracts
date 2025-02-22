@@ -23,5 +23,5 @@ interface IMemeFactory {
 
     function updateImplementation(address newImplementation) external;
 
-    function version() external pure returns (string memory);
+    function version() external view returns (bytes32);
 }

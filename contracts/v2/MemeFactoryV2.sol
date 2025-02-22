@@ -9,11 +9,10 @@ import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transp
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "./interfaces/IERC20MEME.sol";
-import "./config.sol";
-import "./Versioned.sol";
+import "../interfaces/IERC20MEME.sol";
+import "../config.sol";
 
-contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Versioned {
+contract MemeFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeable{
     event ERC20Created(address proxy);
     event ERC20Upgraded(address proxy, address newImplementation);
 
@@ -37,7 +36,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
             factory: factoryAddress,
             getLiquidity: _getLiquidity,
             initialSupply: 10,
-            protocolFee: 2500,
+            protocolFee: 3000,
             initialMintCost: 1,
             pool: Config.Pool({
                 fee: 3000,
@@ -48,22 +47,14 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         });
     }
 
+  /*  constructor() {
+        _disableInitializers();
+    }
+*/
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     function getConfig() external view returns (Config.Token memory) {
         return config;
-    }
-
-    function updateConfig(Config.Token memory _config) external onlyOwner  {
-        config = _config;
-    }
-
-    function withdrawProcotolFee(address tokenAddress, uint256 amount) external onlyOwner {
-        IERC20 token = IERC20(tokenAddress);
-        require(token.balanceOf(address(this)) >= amount, "Insufficient balance");
-
-        bool success = token.transfer(owner(), amount);
-        require(success, "Transfer failed");
     }
 
     function createERC20(
@@ -111,6 +102,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         }
     }
 
-
-
+    function version() public pure returns (string memory) {
+        return "2.1.0";
+    }
 }

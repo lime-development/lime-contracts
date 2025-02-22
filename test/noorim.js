@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { MaxUint256 } = require("ethers");
 const { ethers, upgrades } = require("hardhat");
+const { bigint } = require("hardhat/internal/core/params/argumentTypes");
 
 //HAQQ Mainnet
 /*
@@ -15,6 +16,40 @@ const swapRouterAddress = "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E";
 const factoryAddress = "0x0227628f3F023bb0B980b67D528571c95c6DaC1c";
 const wEthAddress = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"
 const wEthWhale = "0xBaEb92889696217A3A6be2175E5a95dC4cFFC9f7"
+
+async function getTokenMetrics(newMEME, amount, ethers) {
+  // Get total cost and fee
+  const [initCost, _] = await newMEME.calculatePrice(1);
+  const [cost_, fee] = await newMEME.calculatePrice(amount);
+
+  // Get the cost for amount + 1
+  const [tmp] = await newMEME.calculatePrice(amount + BigInt(1));
+
+  const islmPrice = BigInt(37);
+  const islmPriceDiv = BigInt(1000);
+
+  // Calculate token price (per unit)
+  initPrice = (initCost * islmPrice) / islmPriceDiv;
+  const price = ((tmp - cost_) * islmPrice) / islmPriceDiv;
+
+  // Get total supply and calculate market cap
+  const marketCap = (price * amount);
+  const feeUSD = fee * islmPrice / islmPriceDiv;
+
+  const grow = (tmp - cost_) * BigInt(10000) / initCost  - BigInt(10000)
+
+  //const incPrice = price * BigInt(100)/ initPrice;
+
+  console.log("Minted:" , amount,
+              "; Total spent:", ethers.formatUnits(cost_ + fee, 18), 
+              "; Token price:", ethers.formatUnits(price, 18), "USD", 
+              "; grow :", ethers.formatUnits(grow,2), "%", 
+              "; Market cap:", ethers.formatUnits(marketCap, 18), "USD",
+              "; Total fee:", ethers.formatUnits(feeUSD, 18), "USD"
+            );
+
+  return { totalSpent: cost_ + fee, tokenPrice: price, marketCap };
+}
 
 
 before(async function () {
@@ -50,44 +85,29 @@ before(async function () {
 });
 
 describe("Test MemeFactory", function () {
-  it("Deploy", async function () {
+  it("Deploy factory", async function () {
     expect(await factory.implementation()).to.equal(await meme.getAddress());
   });
-  /*
-    it("Manual liquidity test", async function () {
-      const liquidityHelper = await ethers.getContractFactory("getLiquidityHelper");
-      const iquidity = await liquidityHelper.deploy();
-      await iquidity.waitForDeployment();
-  
-      const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
-  
-      const MyTokenUpgradeable = await ethers.getContractFactory("ERC20MEME");
-      logic = await MyTokenUpgradeable.deploy();
-      await logic.waitForDeployment();
-  
-      const TransparentUpgradeableProxy = await ethers.getContractFactory("TransparentUpgradeableProxy");
-      const proxyAdmin = owner.address; // Админ прокси
-      const initialSupply = 1000000;
-      const initData = logic.interface.encodeFunctionData("initialize",
-        ["MyToken", "MTK", initialSupply, await iquidity.getAddress()]);
-  
-  
-      proxy = await TransparentUpgradeableProxy.deploy(
-        await logic.getAddress(),
-        proxyAdmin,
-        initData
-      );
-      await proxy.waitForDeployment();
-  
-      token = await MyTokenUpgradeable.attach(await proxy.getAddress());
-  
-      await wISLM.approve(token.getAddress(), MaxUint256);
-      await token.initializePool(await wISLM.getAddress());
-      pool = await token.pool();
-      expect(await token.balanceOf(pool)).to.equal(initialSupply);
-  
-    });
-  */
+
+  it("Update factory", async function () {
+    MemeFactoryV2 = await ethers.getContractFactory("MemeFactoryV2");
+    console.log("Factory version",  await factory.version()); 
+    factory = await upgrades.upgradeProxy(await factory.getAddress(), MemeFactoryV2);
+    expect(await factory.version()).to.equal("2.1.0");
+
+    // Пытаемся обновить контракт с другого кошелька (не владельца)
+    const [_, nonOwner] = await ethers.getSigners();
+    // Получаем контракт как non-owner
+    const nonOwnerFactory = await ethers.getContractAt("MemeFactoryV2", await factory.getAddress(), nonOwner);
+   
+    try {
+      await nonOwnerFactory.upgradeProxy(await nonOwnerFactory.getAddress(), MemeFactory);
+      assert.fail("Non-owner should not be able to upgrade the contract");
+    } catch (error) {
+      
+    }
+    expect(await nonOwnerFactory.version()).to.equal("2.1.0");
+  });
 
   it("Create Meme", async function () {
     const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
@@ -103,9 +123,25 @@ describe("Test MemeFactory", function () {
     expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply**(await newMEME.decimals()));
   });
 
+  it("Math test", async function () {
+    const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
+    await wISLM.approve(factory.getAddress(), MaxUint256);
+
+    const tx = await factory.createERC20("Test", "Test", wEthAddress);
+    const receipt = await tx.wait();
+    const newMEME = await ethers.getContractAt("ERC20MEME", await factory.memelist(1));
+  
+    for (let amount = BigInt(1000); amount < BigInt(100000000000); amount=amount*BigInt(10)) {
+      await getTokenMetrics(newMEME, amount, ethers);
+    }
+    
+    
+  });
+
+
   it("Update Meme Implementation", async function () {
     const ContractMemeV1 = await ethers.getContractFactory("ERC20MEME");
-    const ContractMemeV2 = await ethers.getContractFactory("ERC20MEME_V2");
+    const ContractMemeV2 = await ethers.getContractFactory("ERC20MEMEV2");
 
     const meme_v1 = await ContractMemeV1.deploy();
     await meme_v1.waitForDeployment();
@@ -127,7 +163,7 @@ describe("Test MemeFactory", function () {
     expect(await mem_v2.balanceOf(mem_v2.pool())).to.equal((await factory.getConfig()).initialSupply**(await mem_v2.decimals()));
 
     const tokenAddress = await factory.memelist(2);
-    const ERC20 = await ethers.getContractFactory("ERC20MEME_V2");
+    const ERC20 = await ethers.getContractFactory("ERC20MEMEV2");
     const tokenInstance = ERC20.attach(tokenAddress);
 
     const tx3 = await factory.updateImplementation(await meme_v2.getAddress());
