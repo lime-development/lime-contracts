@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@openzeppelin/hardhat-upgrades");
 require("@nomiclabs/hardhat-truffle5");
 require("dotenv").config(); 
 
