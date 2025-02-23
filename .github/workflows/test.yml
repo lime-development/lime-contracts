@@ -20,6 +20,10 @@ jobs:
 
       - name: Compile contracts
         run: npx hardhat compile
+        env:
+            PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
       - name: Run tests
         run: npx hardhat test
+        env:
+            PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
