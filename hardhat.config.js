@@ -40,7 +40,6 @@ module.exports = {
       },*/
       forking: {
         url: "https://sepolia.drpc.org", 
-        blockNumber: 7649193, 
         blockNumber: 7771743, 
       },
     },
