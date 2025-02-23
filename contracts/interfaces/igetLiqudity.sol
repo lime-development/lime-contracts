@@ -4,7 +4,8 @@ pragma solidity ^0.8.20;
 interface igetLiquidity {
     function getLiquidity(
         uint256 amount0,
-        uint256 amount1
+        uint256 amount1,
+        uint160 sqrtRatioX96
     ) external pure returns (uint128 liquidity);
 
     function getSqrtPriceX96(

@@ -15,6 +15,8 @@ const wISLMWhale = "0x47097845D0bcA6BD60f7cC4Bf524c9964DbB3140"
 const swapRouterAddress = "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E";
 const factoryAddress = "0x0227628f3F023bb0B980b67D528571c95c6DaC1c";
 const wEthAddress = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"
+//ToDO!!!!!
+//const wEthAddress = "0xE49ACc3B16c097ec88Dc9352CE4Cd57aB7e35B95"
 const wEthWhale = "0xBaEb92889696217A3A6be2175E5a95dC4cFFC9f7"
 
 async function getTokenMetrics(newMEME, amount, ethers) {
@@ -51,6 +53,23 @@ async function getTokenMetrics(newMEME, amount, ethers) {
   return { totalSpent: cost_ + fee, tokenPrice: price, marketCap };
 }
 
+async function getERC20Created(receipt){
+  const contractInterface = new ethers.Interface(["event ERC20Created(address tokenAddress)"]);
+
+  const erc20CreatedEvents = receipt.logs.map(log => {
+    try {
+      const parsedLog = contractInterface.parseLog(log);
+      if (parsedLog.name === "ERC20Created") {
+        return parsedLog.args[0]; // Забираем сам `tokenAddress`
+      }
+    } catch (error) {
+      return null;
+    }
+  }).filter(address => address !== null);
+
+  return  erc20CreatedEvents[0];
+}
+
 
 before(async function () {
   [owner] = await ethers.getSigners();
@@ -66,12 +85,12 @@ before(async function () {
   await wISLM.connect(whaleSigner).transfer(owner.address, transferAmount); */
 
   //Get wISLM 
-  const Weth = await ethers.getContractAt("IERC20", wEthAddress);
+  const Weth = await ethers.getContractAt("ERC20", wEthAddress);
   await ethers.provider.send("hardhat_impersonateAccount", [wEthWhale]);
   const whaleSigner = await ethers.getSigner(wEthWhale);
-  const transferAmount = ethers.parseUnits("312", 18); // 1 Weth
-  await Weth.connect(whaleSigner).transfer(owner.address, transferAmount);
-
+  const transferAmount = ethers.parseUnits("1350", 18); // 1 Weth
+  const tx = await Weth.connect(whaleSigner).transfer(owner.address, transferAmount);
+ 
   const ContractMeme = await ethers.getContractFactory("ERC20MEME");
 
   meme = await ContractMeme.deploy();
@@ -91,13 +110,10 @@ describe("Test MemeFactory", function () {
 
   it("Update factory", async function () {
     MemeFactoryV2 = await ethers.getContractFactory("MemeFactoryV2");
-    console.log("Factory version",  await factory.version()); 
     factory = await upgrades.upgradeProxy(await factory.getAddress(), MemeFactoryV2);
     expect(await factory.version()).to.equal("2.1.0");
 
-    // Пытаемся обновить контракт с другого кошелька (не владельца)
     const [_, nonOwner] = await ethers.getSigners();
-    // Получаем контракт как non-owner
     const nonOwnerFactory = await ethers.getContractAt("MemeFactoryV2", await factory.getAddress(), nonOwner);
    
     try {
@@ -111,18 +127,15 @@ describe("Test MemeFactory", function () {
 
   it("Create Meme", async function () {
     const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
-    await wISLM.approve(factory.getAddress(), MaxUint256);
+    await wISLM.approve(factory.getAddress(), (MaxUint256-BigInt(1)));
 
     const tx = await factory.createERC20("Test", "Test", wEthAddress);
     const receipt = await tx.wait();
-    const newMEME = await ethers.getContractAt("ERC20MEME", await factory.memelist(1));
-    //console.log("Meme Meme balance", await newMEME.balanceOf(newMEME.getAddress()));  
-    //console.log("Meme wETH balance", await wISLM.balanceOf(newMEME.getAddress())); 
-    //console.log("Pool Meme balance", );  
-    //console.log("Pool wETH balance", await wISLM.balanceOf(newMEME.pool())); 
+    const meme = await getERC20Created(receipt);
+    const newMEME = await ethers.getContractAt("ERC20MEME", meme);
     expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply**(await newMEME.decimals()));
   });
-
+/*
   it("Math test", async function () {
     const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
     await wISLM.approve(factory.getAddress(), MaxUint256);
@@ -134,10 +147,36 @@ describe("Test MemeFactory", function () {
     for (let amount = BigInt(1000); amount < BigInt(100000000000); amount=amount*BigInt(10)) {
       await getTokenMetrics(newMEME, amount, ethers);
     }
-    
-    
   });
+*/
 
+  it("Mint Meme ", async function () {
+    const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
+    await wISLM.approve(factory.getAddress(), MaxUint256);
+
+    const tx = await factory.createERC20("Test", "Test", wEthAddress);
+    const receipt = await tx.wait();
+    const meme = await getERC20Created(receipt);
+    const newMEME = await ethers.getContractAt("ERC20MEME", meme);
+    expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply**(await newMEME.decimals()));
+
+    await wISLM.approve(await newMEME.getAddress(), MaxUint256);
+    const ownerBalanceBefore = await wISLM.balanceOf(owner);
+    //console.log("Owner wETH balance", ownerBalanceBefore); 
+
+    const amount = 13;
+
+    //console.log("Mint price :", await newMEME.calculatePrice(amount));
+    //console.log("Balance before mint - MEME", await newMEME.balanceOf(await newMEME.getAddress()));
+    //console.log("Balance before mint - wISLM", await wISLM.balanceOf(await newMEME.getAddress()));
+    await newMEME.mint(owner, amount);
+    const ownerBalanceAfter = await wISLM.balanceOf(owner);
+    //console.log("Owner wETH after ", ownerBalanceAfter, "Delta", ownerBalanceBefore-ownerBalanceAfter); 
+    //console.log("Balance after mint - MEME", await newMEME.balanceOf(await newMEME.getAddress()));
+    //console.log("Balance after mint - wISLM", await wISLM.balanceOf(await newMEME.getAddress()));
+    expect(await newMEME.balanceOf(owner)).to.equal(amount);
+
+  });
 
   it("Update Meme Implementation", async function () {
     const ContractMemeV1 = await ethers.getContractFactory("ERC20MEME");
@@ -154,12 +193,14 @@ describe("Test MemeFactory", function () {
 
     const tx = await factory.createERC20("Test1", "Test1", wEthAddress);
     const receipt = await tx.wait();
-    const mem_v1 = await ethers.getContractAt("ERC20MEME", await factory.memelist(1));
+    const meme = await getERC20Created(receipt);
+    const mem_v1 = await ethers.getContractAt("ERC20MEME", meme);
     expect(await mem_v1.balanceOf(mem_v1.pool())).to.equal((await factory.getConfig()).initialSupply**(await mem_v1.decimals()));
 
     const tx2 = await factory.createERC20("Test2", "Test2", wEthAddress);
-    await tx2.wait();
-    const mem_v2 = await ethers.getContractAt("ERC20MEME", await factory.memelist(2));
+    const receipt2 = await tx2.wait();
+    const meme2 = await getERC20Created(receipt2);
+    const mem_v2 = await ethers.getContractAt("ERC20MEME", meme2);
     expect(await mem_v2.balanceOf(mem_v2.pool())).to.equal((await factory.getConfig()).initialSupply**(await mem_v2.decimals()));
 
     const tokenAddress = await factory.memelist(2);

@@ -25,9 +25,9 @@ contract getLiquidityHelper {
 
     function getLiquidity(
         uint256 amount0,
-        uint256 amount1
+        uint256 amount1,
+        uint160 sqrtRatioX96 
     ) external pure returns (uint128 liquidity) {
-        uint160 sqrtRatioX96 = getSqrtPriceX96(amount1, amount0);
         int24 TICK_ = 60; 
         int24 MIN_ = -887272;
         int24 MAX_= -MIN_;    

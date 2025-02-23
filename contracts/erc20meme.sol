@@ -50,7 +50,7 @@ contract ERC20MEME is
     function decimals() public view virtual override returns (uint8) {
         return 6;
     }
-
+ 
     function mint(address to, uint256 amount) public {
         require( poolInitialized, "The token pool must be initialized" );
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
@@ -77,24 +77,9 @@ contract ERC20MEME is
             "Transfer token failed"
         );
 
-        IERC20(pairedToken).approve(config.swapRouter, poolAmount);
-
-        uint256 toPool = IV3SwapRouter(config.swapRouter).exactInputSingle(
-            IV3SwapRouter.ExactInputSingleParams({
-                tokenIn: address(pairedToken),
-                tokenOut: address(this),
-                fee: config.pool.fee,
-                recipient: address(this),
-                amountIn: poolAmount,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            })
-        );
-        require(toPool > 0, "Swap to mint failed");
-
-        _burn(address(this), toPool);
+        swap(pairedToken, poolAmount/2);
+        addLiquidity();
         _mint(to, amount);
-
         emit Mint(to, amount, withdrow);
     }
 

@@ -13,6 +13,8 @@ contract ERC20PoolV3 is Initializable {
     event PoolCreated(address token0, address token1, address pool);
     event TokenInitialized(address pairedToken, address pool);
     event PriceSetuped(address pool, uint160 sqrtPriceX96);
+    event Swaped(address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut);
+    event AddedLiquidity(address token0, uint256 amount0, address token1, uint256 amount1);
 
     address public pool;
     address public pairedToken;
@@ -29,7 +31,7 @@ contract ERC20PoolV3 is Initializable {
         require(pool == address(0), "Already initialized pool");
         createPool();
         setupPrice();
-        addInitialLiquidity();
+        addLiquidity();
         poolInitialized = true;
         emit TokenInitialized(pairedToken, pool);
     }
@@ -84,9 +86,35 @@ contract ERC20PoolV3 is Initializable {
         (address token0, address token1) = abi.decode(data, (address, address));
         IERC20(token0).transfer(msg.sender, amount0);
         IERC20(token1).transfer(msg.sender, amount1);
+        emit AddedLiquidity(token0, amount0, token1, amount1);
     }
 
-    function addInitialLiquidity() internal {
+
+    function swap(address tokenIn, uint256 amount) internal {
+        require(pool != address(0), "Pool must be created");
+        require(IERC20(tokenIn).balanceOf(address(this)) > amount, "Insufficient balance for Swap");
+        IERC20(tokenIn).approve(config.swapRouter, amount);
+
+        address tokenOut = (address(this) == tokenIn) ? pairedToken : address(this);
+
+        uint256 amountOut = IV3SwapRouter(config.swapRouter).exactInputSingle(
+            IV3SwapRouter.ExactInputSingleParams({
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
+                fee: config.pool.fee,
+                recipient: address(this),
+                amountIn: amount,
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+            })
+        );
+        require(amountOut > 0, "Swap to mint failed");
+        emit Swaped(tokenIn, amount, tokenOut, amountOut);
+
+    }
+
+    function addLiquidity() internal {
+        require(pool != address(0), "Pool must be created");
         (address token0, address token1) = address(this) < pairedToken
             ? (address(this), pairedToken)
             : (pairedToken, address(this));
@@ -99,19 +127,21 @@ contract ERC20PoolV3 is Initializable {
         require(amount1 > 0, "Amount of token1 must be greater than 0");
         IERC20(token1).approve(pool, amount1);
 
-        uint128 liquidityAmount = igetLiquidity(config.getLiquidity).getLiquidity(amount0, amount1);
+        (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
+
+        uint256 liquidity = IUniswapV3Pool(pool).liquidity();
+        uint128 liquidityIn = igetLiquidity(config.getLiquidity).getLiquidity(amount0, amount1, sqrtPriceX96);
 
         IUniswapV3Pool(pool).mint(
             address(this),
             (config.pool.minTick / config.pool.tickSpacing) * config.pool.tickSpacing,
             (config.pool.maxTick / config.pool.tickSpacing) * config.pool.tickSpacing,
-            liquidityAmount,
+            liquidityIn,
             abi.encode(token0, token1)
         );
 
         require(
-            IUniswapV3Pool(pool).liquidity() > 0,
-            "AddInitialLiquidity falt"
+            IUniswapV3Pool(pool).liquidity() > liquidity,"AddLiquidity falt"
         );
     }
 }
