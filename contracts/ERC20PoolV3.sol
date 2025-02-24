@@ -20,8 +20,6 @@ contract ERC20PoolV3 is Initializable {
     address public pairedToken;
     Config.Token public config;
 
-    bool public poolInitialized = false;
-
     function __ERC20PoolV3_init(address _pairedToken, Config.Token memory _config) internal onlyInitializing {
         pairedToken = _pairedToken;
         config = _config;
@@ -32,14 +30,11 @@ contract ERC20PoolV3 is Initializable {
         createPool();
         setupPrice();
         addLiquidity();
-        poolInitialized = true;
         emit TokenInitialized(pairedToken, pool);
     }
 
     function createPool() internal {
-        (address token0, address token1) = address(this) < pairedToken
-            ? (address(this), pairedToken)
-            : (pairedToken, address(this)); 
+        (address token0, address token1) = getTokens();
 
         pool = IUniswapV3Factory(config.factory).getPool(token0, token1, config.pool.fee);
         if (pool == address(0)) {
@@ -49,10 +44,8 @@ contract ERC20PoolV3 is Initializable {
         emit PoolCreated(token0, token1, pool);
     }
 
-    function setupPrice() internal {
-        (address token0, address token1) = address(this) < pairedToken
-            ? (address(this), pairedToken)
-            : (pairedToken, address(this));
+    function setupPrice() internal  {
+        (address token0, address token1) = getTokens();
 
         uint256 amount0 = IERC20(token0).balanceOf(address(this));
         require(amount0 > 0, "Amount of token0 must be greater than 0");
@@ -115,9 +108,7 @@ contract ERC20PoolV3 is Initializable {
 
     function addLiquidity() internal {
         require(pool != address(0), "Pool must be created");
-        (address token0, address token1) = address(this) < pairedToken
-            ? (address(this), pairedToken)
-            : (pairedToken, address(this));
+        (address token0, address token1) = getTokens();
 
         uint256 amount0 = IERC20(token0).balanceOf(address(this));
         require(amount0 > 0, "Amount of token0 must be greater than 0");
@@ -142,6 +133,22 @@ contract ERC20PoolV3 is Initializable {
 
         require(
             IUniswapV3Pool(pool).liquidity() > liquidity,"AddLiquidity falt"
+        );
+    }
+
+    function getTokens() public view returns (address token0, address token1) {
+        (token0, token1) = address(this) < pairedToken
+            ? (address(this), pairedToken)
+            : (pairedToken, address(this));
+    }
+
+    function _collectPoolFees() internal returns (uint256 amount0, uint256 amount1)  {
+        (amount0, amount1) =  IUniswapV3Pool(pool).collect(
+            address(this),
+            (config.pool.minTick / config.pool.tickSpacing) * config.pool.tickSpacing,
+            (config.pool.maxTick / config.pool.tickSpacing) * config.pool.tickSpacing,
+            type(uint128).max,
+            type(uint128).max
         );
     }
 }

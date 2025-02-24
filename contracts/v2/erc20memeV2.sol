@@ -15,6 +15,7 @@ import "../interfaces/IMemeFactory.sol";
 import "../config.sol";
 import "../interfaces/igetLiqudity.sol";
 import "../ERC20PoolV3.sol";
+import "../Versioned.sol";
 
 contract ERC20MEMEV2 is
     Initializable,
@@ -22,7 +23,8 @@ contract ERC20MEMEV2 is
     OwnableUpgradeable,
     ERC20PermitUpgradeable,
     UUPSUpgradeable,
-    ERC20PoolV3
+    ERC20PoolV3,
+    Versioned 
 {
     event Mint(address to, uint256 amount, uint256 spended);
 
@@ -48,23 +50,13 @@ contract ERC20MEMEV2 is
     function decimals() public view virtual override returns (uint8) {
         return 6;
     }
-
+ 
     function mint(address to, uint256 amount) public {
-        require( poolInitialized, "The token pool must be initialized" );
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
         uint256 withdrow = poolAmount + protocolFee;
         require(
             withdrow > 0,
             "The withdrowAmount greater than zero is required for a mint."
-        );
-
-        require(
-            IERC20(pairedToken).balanceOf(msg.sender) >= withdrow,
-            "Insufficient token balance"
-        );
-        require(
-            IERC20(pairedToken).allowance(msg.sender, address(this)) >= withdrow,
-            "No token allowance has been issued"
         );
         require(
             IERC20(pairedToken).transferFrom(msg.sender, address(this), poolAmount),
@@ -75,24 +67,9 @@ contract ERC20MEMEV2 is
             "Transfer token failed"
         );
 
-        IERC20(pairedToken).approve(config.swapRouter, poolAmount);
-
-        uint256 toPool = IV3SwapRouter(config.swapRouter).exactInputSingle(
-            IV3SwapRouter.ExactInputSingleParams({
-                tokenIn: address(pairedToken),
-                tokenOut: address(this),
-                fee: config.pool.fee,
-                recipient: address(this),
-                amountIn: poolAmount,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            })
-        );
-        require(toPool > 0, "Swap to mint failed");
-
-        _burn(address(this), toPool);
+        swap(pairedToken, poolAmount/2);
+        addLiquidity();
         _mint(to, amount);
-
         emit Mint(to, amount, withdrow);
     }
 
@@ -111,11 +88,11 @@ contract ERC20MEMEV2 is
         uint8 externalDecimals = ERC20Upgradeable(pairedToken).decimals();
         if (externalDecimals > decimals()) {
             _price =
-                ((amount * amount) / 2) *
+                ((amount * amount * amount) / 30000000 ) *
                 10 ** (externalDecimals - decimals());
         } else {
             _price =
-                ((amount * amount) / 2) /
+                ((amount * amount * amount) / 30000000 ) /
                 10 ** (decimals() - externalDecimals);
         }
         return _price;
@@ -124,8 +101,4 @@ contract ERC20MEMEV2 is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
-
-    function version() public pure returns (string memory) {
-        return "2.1.1";
-    }
 }

@@ -52,21 +52,11 @@ contract ERC20MEME is
     }
  
     function mint(address to, uint256 amount) public {
-        require( poolInitialized, "The token pool must be initialized" );
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
         uint256 withdrow = poolAmount + protocolFee;
         require(
             withdrow > 0,
             "The withdrowAmount greater than zero is required for a mint."
-        );
-
-        require(
-            IERC20(pairedToken).balanceOf(msg.sender) >= withdrow,
-            "Insufficient token balance"
-        );
-        require(
-            IERC20(pairedToken).allowance(msg.sender, address(this)) >= withdrow,
-            "No token allowance has been issued"
         );
         require(
             IERC20(pairedToken).transferFrom(msg.sender, address(this), poolAmount),
@@ -106,6 +96,13 @@ contract ERC20MEME is
                 10 ** (decimals() - externalDecimals);
         }
         return _price;
+    }
+
+    function collectPoolFees() external onlyOwner{
+        (uint256 amount0, uint256 amount1) = _collectPoolFees();
+        (address token0, address token1) = getTokens();
+        IERC20(token0).transferFrom(msg.sender, owner(), amount0);
+        IERC20(token1).transferFrom(msg.sender, owner(), amount1);
     }
 
     function _authorizeUpgrade(
