@@ -75,10 +75,9 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,
             abi.encodeWithSignature(
-                "initialize(string,string,uint256,address)",
+                "initialize(string,string,address)",
                 name,
                 symbol,
-                config.initialSupply,
                 tokenPair
             )
         );
@@ -110,7 +109,5 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
             emit ERC20Upgraded(proxy, newImplementation);
         }
     }
-
-
 
 }

@@ -36,7 +36,6 @@ contract ERC20MEMEV2 is
     function initialize(
         string memory name,
         string memory symbol,
-        uint256 initialSupply_,
         address pairedToken_
     ) public initializer {
         __ERC20_init(name, symbol);
@@ -44,7 +43,7 @@ contract ERC20MEMEV2 is
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
-        _mint(address(this), initialSupply_**decimals());
+        _mint(address(this), config.initialSupply**decimals());
     }
 
     function decimals() public view virtual override returns (uint8) {
@@ -96,6 +95,13 @@ contract ERC20MEMEV2 is
                 10 ** (decimals() - externalDecimals);
         }
         return _price;
+    }
+
+    function collectPoolFees() external onlyOwner{
+        (uint256 amount0, uint256 amount1) = _collectPoolFees();
+        (address token0, address token1) = getTokens();
+        IERC20(token0).transferFrom(msg.sender, owner(), amount0);
+        IERC20(token1).transferFrom(msg.sender, owner(), amount1);
     }
 
     function _authorizeUpgrade(

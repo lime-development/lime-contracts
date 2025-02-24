@@ -7,7 +7,6 @@ interface IERC20MEME {
     function initialize(
         string memory name,
         string memory symbol,
-        uint256 initialSupply_,
         address pairedToken_
     ) external;
 

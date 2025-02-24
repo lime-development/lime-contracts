@@ -36,7 +36,6 @@ contract ERC20MEME is
     function initialize(
         string memory name,
         string memory symbol,
-        uint256 initialSupply_,
         address pairedToken_
     ) public initializer {
         __ERC20_init(name, symbol);
@@ -44,7 +43,7 @@ contract ERC20MEME is
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
-        _mint(address(this), initialSupply_**decimals());
+        _mint(address(this), config.initialSupply**decimals());
     }
 
     function decimals() public view virtual override returns (uint8) {

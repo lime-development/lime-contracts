@@ -11,8 +11,10 @@ import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "../interfaces/IERC20MEME.sol";
 import "../config.sol";
+import "../Versioned.sol";
 
-contract MemeFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeable{
+
+contract MemeFactoryV2  is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event ERC20Created(address proxy);
     event ERC20Upgraded(address proxy, address newImplementation);
 
@@ -36,7 +38,7 @@ contract MemeFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeable{
             factory: factoryAddress,
             getLiquidity: _getLiquidity,
             initialSupply: 10,
-            protocolFee: 3000,
+            protocolFee: 2500,
             initialMintCost: 1,
             pool: Config.Pool({
                 fee: 3000,
@@ -47,14 +49,22 @@ contract MemeFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeable{
         });
     }
 
-  /*  constructor() {
-        _disableInitializers();
-    }
-*/
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     function getConfig() external view returns (Config.Token memory) {
         return config;
+    }
+
+    function updateConfig(Config.Token memory _config) external onlyOwner  {
+        config = _config;
+    }
+
+    function withdrawProcotolFee(address tokenAddress, uint256 amount) external onlyOwner {
+        IERC20 token = IERC20(tokenAddress);
+        require(token.balanceOf(address(this)) >= amount, "Insufficient balance");
+
+        bool success = token.transfer(owner(), amount);
+        require(success, "Transfer failed");
     }
 
     function createERC20(
@@ -66,10 +76,9 @@ contract MemeFactoryV2 is Initializable, OwnableUpgradeable, UUPSUpgradeable{
         ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,
             abi.encodeWithSignature(
-                "initialize(string,string,uint256,address)",
+                "initialize(string,string,address)",
                 name,
                 symbol,
-                config.initialSupply,
                 tokenPair
             )
         );

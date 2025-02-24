@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
@@ -9,23 +10,26 @@ import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 import "./config.sol";
 import "./interfaces/igetLiqudity.sol";
 
-contract ERC20PoolV3 is Initializable {
+contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     event PoolCreated(address token0, address token1, address pool);
     event TokenInitialized(address pairedToken, address pool);
     event PriceSetuped(address pool, uint160 sqrtPriceX96);
     event Swaped(address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut);
     event AddedLiquidity(address token0, uint256 amount0, address token1, uint256 amount1);
+    event CollectedPoolFees(uint256 amount0, uint256 amount1);
 
     address public pool;
     address public pairedToken;
     Config.Token public config;
 
     function __ERC20PoolV3_init(address _pairedToken, Config.Token memory _config) internal onlyInitializing {
+        __Ownable_init(msg.sender);
         pairedToken = _pairedToken;
         config = _config;
+        IERC20(pairedToken).approve(config.swapRouter, type(uint256).max);
     }
 
-    function initializePool() public {
+    function initializePool() public onlyOwner {
         require(pool == address(0), "Already initialized pool");
         createPool();
         setupPrice();
@@ -85,8 +89,8 @@ contract ERC20PoolV3 is Initializable {
 
     function swap(address tokenIn, uint256 amount) internal {
         require(pool != address(0), "Pool must be created");
-        require(IERC20(tokenIn).balanceOf(address(this)) > amount, "Insufficient balance for Swap");
-        IERC20(tokenIn).approve(config.swapRouter, amount);
+        require(IERC20(tokenIn).balanceOf(address(this)) >= amount, "Insufficient balance for Swap");
+        IERC20(tokenIn).approve(config.swapRouter, type(uint256).max);
 
         address tokenOut = (address(this) == tokenIn) ? pairedToken : address(this);
 
@@ -101,7 +105,7 @@ contract ERC20PoolV3 is Initializable {
                 sqrtPriceLimitX96: 0
             })
         );
-        require(amountOut > 0, "Swap to mint failed");
+        require(amountOut > 0, "Swap to failed");
         emit Swaped(tokenIn, amount, tokenOut, amountOut);
 
     }
@@ -150,5 +154,6 @@ contract ERC20PoolV3 is Initializable {
             type(uint128).max,
             type(uint128).max
         );
+        emit CollectedPoolFees(amount0, amount1);
     }
 }
