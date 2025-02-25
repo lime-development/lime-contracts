@@ -24,4 +24,6 @@ interface IMemeFactory {
     function updateImplementation(address newImplementation) external;
 
     function version() external view returns (bytes32);
+
+    function collectPoolFees(address meme) external;
 }

@@ -36,9 +36,9 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
             swapRouter: swapRouterAddress,
             factory: factoryAddress,
             getLiquidity: _getLiquidity,
-            initialSupply: 10,
+            initialSupply: 10000000,
             protocolFee: 2500,
-            initialMintCost: 1,
+            initialMintCost: 10000000000000000,
             pool: Config.Pool({
                 fee: 3000,
                 tickSpacing: 60,
@@ -66,6 +66,10 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         require(success, "Transfer failed");
     }
 
+    function collectPoolFees(address meme) external onlyOwner {
+        IERC20MEME(meme).collectPoolFees();
+    }
+
     function createERC20(
         string memory name,
         string memory symbol,
@@ -82,7 +86,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
             )
         );
         address proxyAddress = address(proxy);
-        uint256 toPool = config.initialMintCost**ERC20(tokenPair).decimals();
+        uint256 toPool = config.initialMintCost;
         uint256 protocolFee = (toPool * config.protocolFee) / 100000;
         require(
             IERC20(tokenPair).transferFrom(msg.sender, proxyAddress, toPool),

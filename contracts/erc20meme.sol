@@ -43,7 +43,7 @@ contract ERC20MEME is
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
-        _mint(address(this), config.initialSupply**decimals());
+        _mint(address(this), config.initialSupply);
     }
 
     function decimals() public view virtual override returns (uint8) {
@@ -81,23 +81,13 @@ contract ERC20MEME is
     }
 
     /// factorial X^2 = 1/3 * X^3
-    function calculateValue(
+    function calculateValue (
         uint256 amount
-    ) public view returns (uint256 _price) {
-        uint8 externalDecimals = ERC20Upgradeable(pairedToken).decimals();
-        if (externalDecimals > decimals()) {
-            _price =
-                ((amount * amount * amount) / 30000000 ) *
-                10 ** (externalDecimals - decimals());
-        } else {
-            _price =
-                ((amount * amount * amount) / 30000000 ) /
-                10 ** (decimals() - externalDecimals);
-        }
-        return _price;
+    ) public pure returns (uint256 _price) {
+        _price = ((amount * amount * amount) / 30000000);
     }
 
-    function collectPoolFees() external onlyOwner{
+    function collectPoolFees() external onlyOwner {
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
         IERC20(token0).transferFrom(msg.sender, owner(), amount0);

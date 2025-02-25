@@ -105,7 +105,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
                 sqrtPriceLimitX96: 0
             })
         );
-        require(amountOut > 0, "Swap to failed");
+        require(amountOut > 0, "Swap failed");
         emit Swaped(tokenIn, amount, tokenOut, amountOut);
 
     }

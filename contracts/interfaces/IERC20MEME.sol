@@ -27,6 +27,8 @@ interface IERC20MEME {
     ) external view returns (uint256 poolAmount, uint256 protocolFee);
 
     function calculateValue(uint256 amount) external view returns (uint256 _price);
+    
+    function collectPoolFees() external;
 
     function version() external view returns (bytes32);
 }

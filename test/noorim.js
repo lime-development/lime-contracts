@@ -108,32 +108,15 @@ describe("Test MemeFactory", function () {
     expect(await factory.implementation()).to.equal(await meme.getAddress());
   });
 
-  it("Update factory", async function () {
-    MemeFactoryV2 = await ethers.getContractFactory("MemeFactoryV2");
-    factory = await upgrades.upgradeProxy(await factory.getAddress(), MemeFactoryV2);
-    expect(await factory.version()).to.equal("2.1.0");
-
-    const [_, nonOwner] = await ethers.getSigners();
-    const nonOwnerFactory = await ethers.getContractAt("MemeFactoryV2", await factory.getAddress(), nonOwner);
-   
-    try {
-      await nonOwnerFactory.upgradeProxy(await nonOwnerFactory.getAddress(), MemeFactory);
-      assert.fail("Non-owner should not be able to upgrade the contract");
-    } catch (error) {
-      
-    }
-    expect(await nonOwnerFactory.version()).to.equal("2.1.0");
-  });
-
   it("Create Meme", async function () {
     const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
-    await wISLM.approve(factory.getAddress(), (MaxUint256-BigInt(1)));
+    await wISLM.approve(factory.getAddress(), MaxUint256);
 
     const tx = await factory.createERC20("Test", "Test", wEthAddress);
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);
-    expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply**(await newMEME.decimals()));
+    expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply);
   });
 /*
   it("Math test", async function () {
@@ -158,23 +141,21 @@ describe("Test MemeFactory", function () {
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);
-    expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply**(await newMEME.decimals()));
+    expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply);
 
     await wISLM.approve(await newMEME.getAddress(), MaxUint256);
-    const ownerBalanceBefore = await wISLM.balanceOf(owner);
-    //console.log("Owner wETH balance", ownerBalanceBefore); 
-
-    const amount = 13;
-
-    //console.log("Mint price :", await newMEME.calculatePrice(amount));
-    //console.log("Balance before mint - MEME", await newMEME.balanceOf(await newMEME.getAddress()));
-    //console.log("Balance before mint - wISLM", await wISLM.balanceOf(await newMEME.getAddress()));
-    await newMEME.mint(owner, amount);
-    const ownerBalanceAfter = await wISLM.balanceOf(owner);
-    //console.log("Owner wETH after ", ownerBalanceAfter, "Delta", ownerBalanceBefore-ownerBalanceAfter); 
-    //console.log("Balance after mint - MEME", await newMEME.balanceOf(await newMEME.getAddress()));
-    //console.log("Balance after mint - wISLM", await wISLM.balanceOf(await newMEME.getAddress()));
-    expect(await newMEME.balanceOf(owner)).to.equal(amount);
+    const amount = 1000000;
+    const Try = 100;
+    for (let mintTry = 0; mintTry < Try; mintTry++) {
+      await newMEME.mint(owner, amount);
+    }
+    expect(await newMEME.balanceOf(owner)).to.equal(amount*Try);
+    console.log("Fabric balance before Fee - MEME",  await newMEME.balanceOf(await factory.getAddress()));
+    console.log("Fabric balance before Fee - wISLM", await wISLM.balanceOf(await factory.getAddress()));
+    //ToDo
+    //await factory.collectPoolFees(await newMEME.getAddress());
+    console.log("Fabric balance before after - MEME",  await newMEME.balanceOf(await factory.getAddress()));
+    console.log("Fabric balance before after - wISLM", await wISLM.balanceOf(await factory.getAddress()));
 
   });
 
@@ -195,13 +176,14 @@ describe("Test MemeFactory", function () {
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const mem_v1 = await ethers.getContractAt("ERC20MEME", meme);
-    expect(await mem_v1.balanceOf(mem_v1.pool())).to.equal((await factory.getConfig()).initialSupply**(await mem_v1.decimals()));
+    expect(await mem_v1.balanceOf(mem_v1.pool())).to.equal((await factory.getConfig()).initialSupply);
+
 
     const tx2 = await factory.createERC20("Test2", "Test2", wEthAddress);
     const receipt2 = await tx2.wait();
     const meme2 = await getERC20Created(receipt2);
     const mem_v2 = await ethers.getContractAt("ERC20MEME", meme2);
-    expect(await mem_v2.balanceOf(mem_v2.pool())).to.equal((await factory.getConfig()).initialSupply**(await mem_v2.decimals()));
+    expect(await mem_v2.balanceOf(mem_v2.pool())).to.equal((await factory.getConfig()).initialSupply);
 
     const tokenAddress = await factory.memelist(2);
     const ERC20 = await ethers.getContractFactory("ERC20MEMEV2");
@@ -210,5 +192,22 @@ describe("Test MemeFactory", function () {
     const tx3 = await factory.updateImplementation(await meme_v2.getAddress());
     await tx3.wait();
     expect(await factory.implementation()).to.equal(await meme_v2.getAddress());
+  });
+
+  it("Update factory", async function () {
+    MemeFactoryV2 = await ethers.getContractFactory("MemeFactoryV2");
+    factory = await upgrades.upgradeProxy(await factory.getAddress(), MemeFactoryV2);
+    expect(await factory.version()).to.equal("2.1.0");
+
+    const [_, nonOwner] = await ethers.getSigners();
+    const nonOwnerFactory = await ethers.getContractAt("MemeFactoryV2", await factory.getAddress(), nonOwner);
+   
+    try {
+      await nonOwnerFactory.upgradeProxy(await nonOwnerFactory.getAddress(), MemeFactory);
+      assert.fail("Non-owner should not be able to upgrade the contract");
+    } catch (error) {
+      
+    }
+    expect(await nonOwnerFactory.version()).to.equal("2.1.0");
   });
 })
