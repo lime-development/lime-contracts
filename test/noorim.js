@@ -153,7 +153,7 @@ describe("Test MemeFactory", function () {
     console.log("Fabric balance before Fee - MEME",  await newMEME.balanceOf(await factory.getAddress()));
     console.log("Fabric balance before Fee - wISLM", await wISLM.balanceOf(await factory.getAddress()));
     //ToDo
-    //await factory.collectPoolFees(await newMEME.getAddress());
+    await factory.collectPoolFees(await newMEME.getAddress());
     console.log("Fabric balance before after - MEME",  await newMEME.balanceOf(await factory.getAddress()));
     console.log("Fabric balance before after - wISLM", await wISLM.balanceOf(await factory.getAddress()));
 

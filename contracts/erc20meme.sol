@@ -90,8 +90,8 @@ contract ERC20MEME is
     function collectPoolFees() external onlyOwner {
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
-        IERC20(token0).transferFrom(msg.sender, owner(), amount0);
-        IERC20(token1).transferFrom(msg.sender, owner(), amount1);
+        IERC20(token0).transferFrom(address(this), owner(), amount0);
+        IERC20(token1).transferFrom(address(this), owner(), amount1);
     }
 
     function _authorizeUpgrade(
