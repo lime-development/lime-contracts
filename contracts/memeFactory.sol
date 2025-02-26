@@ -4,18 +4,22 @@ pragma solidity ^0.8.20;
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+//ToDo
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IERC20MEME.sol";
 import "./config.sol";
 import "./Versioned.sol";
 
-contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Versioned {
+contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, PausableUpgradeable, Versioned {
     event ERC20Created(address proxy);
     event ERC20Upgraded(address proxy, address newImplementation);
+    event ConfigUpdated(Config.Token newConfig);
 
     mapping(address => address) public pools;
     address[] public memeListArray;
@@ -28,8 +32,9 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         address swapRouterAddress,
         address factoryAddress,
         address _getLiquidity
-    ) public initializer {
+    ) public reinitializer(1) {
         __Ownable_init(msg.sender); 
+        __Pausable_init();
         implementation = _initialImplementation;
         config = Config.Token({
             swapRouter: swapRouterAddress,
@@ -55,6 +60,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
 
     function updateConfig(Config.Token memory _config) external onlyOwner {
         config = _config;
+        emit ConfigUpdated(config);
     }
 
     function withdrawProcotolFee(address tokenAddress, uint256 amount) external onlyOwner {
@@ -76,7 +82,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         string memory name,
         string memory symbol,
         address tokenPair
-    ) public returns (address) {
+    ) public whenNotPaused returns (address) {
         ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,
             abi.encodeWithSignature(
@@ -105,6 +111,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
     }
 
     function updateImplementation(address newImplementation) external onlyOwner {
+        require(newImplementation.code.length > 0, "Invalid implementation");
         implementation = newImplementation;
         uint256 length = memeListArray.length;
         for (uint256 i = 0; i < length; i++) {

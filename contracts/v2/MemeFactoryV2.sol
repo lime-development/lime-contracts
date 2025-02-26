@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -14,13 +15,13 @@ import "../config.sol";
 import "../Versioned.sol";
 
 
-contract MemeFactoryV2  is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract MemeFactoryV2  is Initializable, OwnableUpgradeable, UUPSUpgradeable, PausableUpgradeable {
     event ERC20Created(address proxy);
     event ERC20Upgraded(address proxy, address newImplementation);
+    event ConfigUpdated(Config.Token newConfig);
 
-    mapping(uint256 => address) public memelist;
     mapping(address => address) public pools;
-    uint256 public memeid;
+    address[] public memeListArray;
     address public implementation;
 
     Config.Token public config;
@@ -30,8 +31,9 @@ contract MemeFactoryV2  is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address swapRouterAddress,
         address factoryAddress,
         address _getLiquidity
-    ) public initializer {
+    ) public reinitializer(1) {
         __Ownable_init(msg.sender); 
+        __Pausable_init();
         implementation = _initialImplementation;
         config = Config.Token({
             swapRouter: swapRouterAddress,
@@ -55,8 +57,9 @@ contract MemeFactoryV2  is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         return config;
     }
 
-    function updateConfig(Config.Token memory _config) external onlyOwner  {
+    function updateConfig(Config.Token memory _config) external onlyOwner {
         config = _config;
+        emit ConfigUpdated(config);
     }
 
     function withdrawProcotolFee(address tokenAddress, uint256 amount) external onlyOwner {
@@ -67,16 +70,18 @@ contract MemeFactoryV2  is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         require(success, "Transfer failed");
     }
 
-    function collectPoolFees(address meme) external onlyOwner {
-        IERC20MEME(meme).collectPoolFees();
+    function collectPoolsFees() external onlyOwner {
+        uint256 length = memeListArray.length;
+        for (uint256 i = 0; i < length; i++) {
+            IERC20MEME(memeListArray[i]).collectPoolFees();
+        }
     }
 
     function createERC20(
         string memory name,
         string memory symbol,
         address tokenPair
-    ) public returns (address) {
-        memeid++;
+    ) public whenNotPaused returns (address) {
         ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,
             abi.encodeWithSignature(
@@ -87,26 +92,29 @@ contract MemeFactoryV2  is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             )
         );
         address proxyAddress = address(proxy);
+
         uint256 toPool = config.initialMintCost;
         uint256 protocolFee = (toPool * config.protocolFee) / 100000;
         require(
             IERC20(tokenPair).transferFrom(msg.sender, proxyAddress, toPool),
-            "Error transferring funds to pool creation."
+            "Error transferring funds to pool creation"
         );
         require(
             IERC20(tokenPair).transferFrom(msg.sender, address(this), protocolFee),
-            "Error in transferring funds"
+            "Error transferring protocol fee"
         );
+        memeListArray.push(proxyAddress);
         IERC20MEME(proxyAddress).initializePool();
-        memelist[memeid] = proxyAddress;
         emit ERC20Created(proxyAddress);
         return proxyAddress;
     }
 
     function updateImplementation(address newImplementation) external onlyOwner {
+        require(newImplementation.code.length > 0, "Invalid implementation");
         implementation = newImplementation;
-        for (uint256 i = 1; i <= memeid; i++) {
-            address proxy = memelist[i];
+        uint256 length = memeListArray.length;
+        for (uint256 i = 0; i < length; i++) {
+            address proxy = memeListArray[i];
             ITransparentUpgradeableProxy(payable(proxy)).upgradeToAndCall(
                 newImplementation,
                 ""

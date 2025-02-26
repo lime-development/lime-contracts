@@ -153,7 +153,7 @@ describe("Test MemeFactory", function () {
     console.log("Fabric balance before Fee - MEME",  await newMEME.balanceOf(await factory.getAddress()));
     console.log("Fabric balance before Fee - wISLM", await wISLM.balanceOf(await factory.getAddress()));
     //ToDo
-    await factory.collectPoolFees(await newMEME.getAddress());
+    await factory.collectPoolsFees();
     console.log("Fabric balance before after - MEME",  await newMEME.balanceOf(await factory.getAddress()));
     console.log("Fabric balance before after - wISLM", await wISLM.balanceOf(await factory.getAddress()));
 
@@ -185,9 +185,8 @@ describe("Test MemeFactory", function () {
     const mem_v2 = await ethers.getContractAt("ERC20MEME", meme2);
     expect(await mem_v2.balanceOf(mem_v2.pool())).to.equal((await factory.getConfig()).initialSupply);
 
-    const tokenAddress = await factory.memelist(2);
     const ERC20 = await ethers.getContractFactory("ERC20MEMEV2");
-    const tokenInstance = ERC20.attach(tokenAddress);
+    const tokenInstance = ERC20.attach(meme2);
 
     const tx3 = await factory.updateImplementation(await meme_v2.getAddress());
     await tx3.wait();
