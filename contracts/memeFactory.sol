@@ -9,7 +9,6 @@ import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transp
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-//ToDo
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IERC20MEME.sol";
@@ -17,11 +16,14 @@ import "./config.sol";
 import "./Versioned.sol";
 
 contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, PausableUpgradeable, Versioned {
+    using SafeERC20 for IERC20;
+
     event ERC20Created(address proxy);
     event ERC20Upgraded(address proxy, address newImplementation);
     event ConfigUpdated(Config.Token newConfig);
+    event ProtocolFeeWithdrawn(address indexed token, uint256 amount);
+    event ImplementationUpdated(address newImplementation);
 
-    mapping(address => address) public pools;
     address[] public memeListArray;
     address public implementation;
 
@@ -32,7 +34,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Paus
         address swapRouterAddress,
         address factoryAddress,
         address _getLiquidity
-    ) public reinitializer(1) {
+    ) public initializer() {
         __Ownable_init(msg.sender); 
         __Pausable_init();
         implementation = _initialImplementation;
@@ -67,8 +69,8 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Paus
         IERC20 token = IERC20(tokenAddress);
         require(token.balanceOf(address(this)) >= amount, "Insufficient balance");
 
-        bool success = token.transfer(owner(), amount);
-        require(success, "Transfer failed");
+        token.safeTransfer(owner(), amount);
+        emit ProtocolFeeWithdrawn(tokenAddress, amount);
     }
 
     function collectPoolsFees() external onlyOwner {
@@ -97,15 +99,18 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Paus
         uint256 toPool = config.initialMintCost;
         uint256 protocolFee = (toPool * config.protocolFee) / 100000;
         require(
-            IERC20(tokenPair).transferFrom(msg.sender, proxyAddress, toPool),
-            "Error transferring funds to pool creation"
+            IERC20(tokenPair).allowance(msg.sender, address(this)) >= (toPool + protocolFee),
+            "Insufficient allowance"
         );
-        require(
-            IERC20(tokenPair).transferFrom(msg.sender, address(this), protocolFee),
-            "Error transferring protocol fee"
-        );
+
+        IERC20(tokenPair).safeTransferFrom(msg.sender, address(this), protocolFee);
+        IERC20(tokenPair).safeTransferFrom(msg.sender, proxyAddress, toPool);
+
         memeListArray.push(proxyAddress);
+
+        require(IERC20MEME(proxyAddress).pool() == address(0), "Pool already initialized");
         IERC20MEME(proxyAddress).initializePool();
+
         emit ERC20Created(proxyAddress);
         return proxyAddress;
     }
@@ -113,14 +118,17 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Paus
     function updateImplementation(address newImplementation) external onlyOwner {
         require(newImplementation.code.length > 0, "Invalid implementation");
         implementation = newImplementation;
+        emit ImplementationUpdated(newImplementation);
+
         uint256 length = memeListArray.length;
         for (uint256 i = 0; i < length; i++) {
             address proxy = memeListArray[i];
-            ITransparentUpgradeableProxy(payable(proxy)).upgradeToAndCall(
-                newImplementation,
-                ""
-            );
-            emit ERC20Upgraded(proxy, newImplementation);
+            try ITransparentUpgradeableProxy(payable(proxy)).upgradeToAndCall(
+                newImplementation, "") {
+                emit ERC20Upgraded(proxy, newImplementation);
+            } catch {
+                emit ERC20Upgraded(proxy, address(0));
+            }
         }
     }
 }

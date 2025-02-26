@@ -31,4 +31,6 @@ interface IERC20MEME {
     function collectPoolFees() external;
 
     function version() external view returns (bytes32);
+
+    function pool() external view returns (address);
 }
