@@ -17,9 +17,8 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
     event ERC20Created(address proxy);
     event ERC20Upgraded(address proxy, address newImplementation);
 
-    mapping(uint256 => address) public memelist;
     mapping(address => address) public pools;
-    uint256 public memeid;
+    address[] public memeListArray;
     address public implementation;
 
     Config.Token public config;
@@ -54,7 +53,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         return config;
     }
 
-    function updateConfig(Config.Token memory _config) external onlyOwner  {
+    function updateConfig(Config.Token memory _config) external onlyOwner {
         config = _config;
     }
 
@@ -66,8 +65,11 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         require(success, "Transfer failed");
     }
 
-    function collectPoolFees(address meme) external onlyOwner {
-        IERC20MEME(meme).collectPoolFees();
+    function collectPoolsFees() external onlyOwner {
+        uint256 length = memeListArray.length;
+        for (uint256 i = 0; i < length; i++) {
+            IERC20MEME(memeListArray[i]).collectPoolFees();
+        }
     }
 
     function createERC20(
@@ -75,7 +77,6 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         string memory symbol,
         address tokenPair
     ) public returns (address) {
-        memeid++;
         ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,
             abi.encodeWithSignature(
@@ -86,6 +87,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
             )
         );
         address proxyAddress = address(proxy);
+
         uint256 toPool = config.initialMintCost;
         uint256 protocolFee = (toPool * config.protocolFee) / 100000;
         require(
@@ -97,15 +99,16 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
             "Error in transferring funds"
         );
         IERC20MEME(proxyAddress).initializePool();
-        memelist[memeid] = proxyAddress;
+        memeListArray.push(proxyAddress);
         emit ERC20Created(proxyAddress);
         return proxyAddress;
     }
 
     function updateImplementation(address newImplementation) external onlyOwner {
         implementation = newImplementation;
-        for (uint256 i = 1; i <= memeid; i++) {
-            address proxy = memelist[i];
+        uint256 length = memeListArray.length;
+        for (uint256 i = 0; i < length; i++) {
+            address proxy = memeListArray[i];
             ITransparentUpgradeableProxy(payable(proxy)).upgradeToAndCall(
                 newImplementation,
                 ""
@@ -113,5 +116,4 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
             emit ERC20Upgraded(proxy, newImplementation);
         }
     }
-
 }
