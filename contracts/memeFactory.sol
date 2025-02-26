@@ -92,14 +92,14 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Vers
         uint256 protocolFee = (toPool * config.protocolFee) / 100000;
         require(
             IERC20(tokenPair).transferFrom(msg.sender, proxyAddress, toPool),
-            "Error transferring funds to pool creation."
+            "Error transferring funds to pool creation"
         );
         require(
             IERC20(tokenPair).transferFrom(msg.sender, address(this), protocolFee),
-            "Error in transferring funds"
+            "Error transferring protocol fee"
         );
-        IERC20MEME(proxyAddress).initializePool();
         memeListArray.push(proxyAddress);
+        IERC20MEME(proxyAddress).initializePool();
         emit ERC20Created(proxyAddress);
         return proxyAddress;
     }
