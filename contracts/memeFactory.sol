@@ -6,6 +6,8 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -15,7 +17,13 @@ import "./interfaces/IERC20MEME.sol";
 import "./config.sol";
 import "./Versioned.sol";
 
-contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, PausableUpgradeable, Versioned {
+contract MemeFactory is 
+        Initializable, 
+        OwnableUpgradeable, 
+        UUPSUpgradeable, 
+        PausableUpgradeable, 
+        Versioned,
+        ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     event ERC20Created(address proxy);
@@ -37,6 +45,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Paus
     ) public initializer() {
         __Ownable_init(msg.sender); 
         __Pausable_init();
+        __ReentrancyGuard_init();
         implementation = _initialImplementation;
         config = Config.Token({
             swapRouter: swapRouterAddress,
@@ -45,6 +54,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Paus
             initialSupply: 10000000,
             protocolFee: 2500,
             initialMintCost: 10000000000000000,
+            divider: 30000000,
             pool: Config.Pool({
                 fee: 3000,
                 tickSpacing: 60,
@@ -81,7 +91,7 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Paus
         string memory name,
         string memory symbol,
         address tokenPair
-    ) public whenNotPaused returns (address) {
+    ) public whenNotPaused nonReentrant returns (address) {
         ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,
             abi.encodeWithSignature(

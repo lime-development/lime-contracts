@@ -8,24 +8,22 @@ import {ERC20Upgradeable, IERC20} from "@openzeppelin/contracts-upgradeable/toke
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import {IV3SwapRouter} from "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
+import {IMemeFactory} from "../interfaces/IMemeFactory.sol";
+import {Config} from "../config.sol";
+import {igetLiquidity} from "../interfaces/igetLiqudity.sol";
+import {ERC20PoolV3} from "../ERC20PoolV3.sol";
+import {Versioned} from "../Versioned.sol";
 
-import {IMemeFactory} from "./interfaces/IMemeFactory.sol";
-import {Config} from "./config.sol";
-import {igetLiquidity} from "./interfaces/igetLiqudity.sol";
-import {ERC20PoolV3} from "./ERC20PoolV3.sol";
-import {Versioned} from "./Versioned.sol";
-
-contract ERC20MEME is
+contract ERC20MEMEV2 is
     Initializable,
     ERC20Upgradeable,
     OwnableUpgradeable,
     ERC20PermitUpgradeable,
     UUPSUpgradeable,
     ERC20PoolV3,
+    ReentrancyGuardUpgradeable,
     Versioned 
 {
     using SafeERC20 for IERC20;
@@ -46,6 +44,7 @@ contract ERC20MEME is
         __Ownable_init(msg.sender);
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
     }

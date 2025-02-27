@@ -8,6 +8,8 @@ import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {IV3SwapRouter} from "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
+
+
 import {Config} from "./config.sol";
 import {igetLiquidity} from "./interfaces/igetLiqudity.sol";
 
@@ -126,7 +128,14 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
 
         uint256 liquidity = IUniswapV3Pool(pool).liquidity();
-        uint128 liquidityIn = igetLiquidity(config.getLiquidity).getLiquidity(amount0, amount1, sqrtPriceX96);
+        uint128 liquidityIn = igetLiquidity(config.getLiquidity).getLiquidity(
+            amount0, 
+            amount1, 
+            sqrtPriceX96,
+            config.pool.tickSpacing,
+            config.pool.minTick,
+            config.pool.maxTick
+        );
 
         IUniswapV3Pool(pool).mint(
             address(this),

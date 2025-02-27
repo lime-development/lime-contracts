@@ -8,10 +8,8 @@ import {ERC20Upgradeable, IERC20} from "@openzeppelin/contracts-upgradeable/toke
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import {IV3SwapRouter} from "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
 import {IMemeFactory} from "./interfaces/IMemeFactory.sol";
 import {Config} from "./config.sol";
@@ -26,6 +24,7 @@ contract ERC20MEME is
     ERC20PermitUpgradeable,
     UUPSUpgradeable,
     ERC20PoolV3,
+    ReentrancyGuardUpgradeable,
     Versioned 
 {
     using SafeERC20 for IERC20;
@@ -46,6 +45,7 @@ contract ERC20MEME is
         __Ownable_init(msg.sender);
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
     }
@@ -54,7 +54,7 @@ contract ERC20MEME is
         return 6;
     }
  
-    function mint(address to, uint256 amount) public {
+    function mint(address to, uint256 amount) public nonReentrant  {
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee;
         require(
@@ -83,8 +83,8 @@ contract ERC20MEME is
     /// factorial X^2 = 1/3 * X^3
     function calculateValue (
         uint256 amount
-    ) public pure returns (uint256 _price) {
-        _price = ((amount * amount * amount) / 30000000);
+    ) public view returns (uint256 _price) {
+        _price = ((amount * amount * amount) / config.divider);
     }
 
     function collectPoolFees() external onlyOwner {

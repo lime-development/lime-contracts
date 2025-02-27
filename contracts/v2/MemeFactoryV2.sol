@@ -6,6 +6,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -16,7 +17,12 @@ import "../config.sol";
 import "../Versioned.sol";
 
 
-contract MemeFactoryV2  is Initializable, OwnableUpgradeable, UUPSUpgradeable, PausableUpgradeable {
+contract MemeFactoryV2  is 
+        Initializable, 
+        OwnableUpgradeable, 
+        UUPSUpgradeable, 
+        PausableUpgradeable,
+        ReentrancyGuardUpgradeable  {
 using SafeERC20 for IERC20;
 
     event ERC20Created(address proxy);
@@ -30,7 +36,7 @@ using SafeERC20 for IERC20;
 
     Config.Token public config;
 
-    function initialize(
+     function initialize(
         address _initialImplementation,
         address swapRouterAddress,
         address factoryAddress,
@@ -38,6 +44,7 @@ using SafeERC20 for IERC20;
     ) public initializer() {
         __Ownable_init(msg.sender); 
         __Pausable_init();
+        __ReentrancyGuard_init();
         implementation = _initialImplementation;
         config = Config.Token({
             swapRouter: swapRouterAddress,
@@ -46,6 +53,7 @@ using SafeERC20 for IERC20;
             initialSupply: 10000000,
             protocolFee: 2500,
             initialMintCost: 10000000000000000,
+            divider: 30000000,
             pool: Config.Pool({
                 fee: 3000,
                 tickSpacing: 60,
@@ -85,7 +93,7 @@ using SafeERC20 for IERC20;
         string memory name,
         string memory symbol,
         address tokenPair
-    ) public whenNotPaused returns (address) {
+    ) public whenNotPaused nonReentrant returns (address) {
         //ToDo tokenPair check
         ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,

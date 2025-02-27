@@ -5,7 +5,10 @@ interface igetLiquidity {
     function getLiquidity(
         uint256 amount0,
         uint256 amount1,
-        uint160 sqrtRatioX96
+        uint160 sqrtRatioX96,
+        int24 tick,
+        int24 min,
+        int24 max
     ) external pure returns (uint128 liquidity);
 
     function getSqrtPriceX96(

@@ -23,17 +23,16 @@ contract getLiquidityHelper {
         return uint160((sqrtPrice * (1 << 96)) / 1e9); // Adjust for precision
     }
 
-    //ToDo Fix TICK_ 
     function getLiquidity(
         uint256 amount0,
         uint256 amount1,
-        uint160 sqrtRatioX96 
+        uint160 sqrtRatioX96,
+        int24 tick,
+        int24 min,
+        int24 max
     ) external pure returns (uint128 liquidity) {
-        int24 TICK_ = 60; 
-        int24 MIN_ = -887272;
-        int24 MAX_= -MIN_;    
-        uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick((MIN_ / TICK_) * TICK_);
-        uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick((MAX_ / TICK_) * TICK_);
+        uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick((min / tick) * tick);
+        uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick((max / tick) * tick);
         liquidity = LiquidityAmounts.getLiquidityForAmounts(sqrtRatioX96, sqrtRatioAX96, sqrtRatioBX96, amount0, amount1);
     }
 }

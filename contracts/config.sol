@@ -17,5 +17,6 @@ contract Config {
         uint256 initialMintCost;
         Pool pool;
         uint256 protocolFee;
+        uint256 divider;
     }
 }
