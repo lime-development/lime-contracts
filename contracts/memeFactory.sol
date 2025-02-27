@@ -17,6 +17,12 @@ import "./interfaces/IERC20MEME.sol";
 import "./config.sol";
 import "./Versioned.sol";
 
+/**
+ * @title MemeFactory
+ * @dev Factory contract for deploying ERC20 tokens with upgradeable functionality.
+ * It also accumulates fees received from token issuance and minting.
+ * @author Vorobev Sergei
+ */
 contract MemeFactory is 
         Initializable, 
         OwnableUpgradeable, 
@@ -26,17 +32,44 @@ contract MemeFactory is
         ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
+    /// @notice Emitted when a new meme token is created
+    /// @param proxy Address of the created meme token proxy
     event ERC20Created(address proxy);
+
+    /// @notice Emitted when an ERC20 token is upgraded
+    /// @param proxy Address of the upgraded token proxy
+    /// @param newImplementation New implementation contract address
     event ERC20Upgraded(address proxy, address newImplementation);
+
+    /// @notice Emitted when the configuration is updated
+    /// @param newConfig New token configuration
     event ConfigUpdated(Config.Token newConfig);
+
+    /// @notice Emitted when protocol fees are withdrawn
+    /// @param token Address of the token being withdrawn
+    /// @param amount Amount of tokens withdrawn
     event ProtocolFeeWithdrawn(address indexed token, uint256 amount);
+
+    /// @notice Emitted when the implementation address is updated
+    /// @param newImplementation New implementation contract address
     event ImplementationUpdated(address newImplementation);
 
+    /// @notice An array of contracts created through the factory.
     address[] public memeListArray;
+
+    /// @notice Address the current implementation contract for ERC20 contracts. 
     address public implementation;
 
+    /// @notice Congig for meme tokens
     Config.Token public config;
 
+    /**
+     * @notice Initializes the Factory with initial configuration for ERC20
+     * @param _initialImplementation Address of the initial implementation contract
+     * @param swapRouterAddress Address of the UniSwapV3 swap router
+     * @param factoryAddress Address of the UniSwapV3 factory
+     * @param _getLiquidity Address for obtaining liquidity information
+     */
     function initialize(
         address _initialImplementation,
         address swapRouterAddress,
@@ -66,15 +99,22 @@ contract MemeFactory is
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
+    /// @notice Returns the current configuration for ERC20 tokens
+    /// @return The current token configuration
     function getConfig() external view returns (Config.Token memory) {
         return config;
     }
 
+    /// @notice Updates the for ERC20 tokens configuration
+    /// @param _config New configuration values
     function updateConfig(Config.Token memory _config) external onlyOwner {
         config = _config;
         emit ConfigUpdated(config);
     }
 
+    /// @notice Withdraws protocol fees to the owner
+    /// @param tokenAddress Address of the token to withdraw
+    /// @param amount Amount to withdraw
     function withdrawProcotolFee(address tokenAddress, uint256 amount) external onlyOwner {
         IERC20 token = IERC20(tokenAddress);
         require(token.balanceOf(address(this)) >= amount, "Insufficient balance");
@@ -83,10 +123,18 @@ contract MemeFactory is
         emit ProtocolFeeWithdrawn(tokenAddress, amount);
     }
 
+    /// @notice Collects pool fees from meme token
+    /// @param meme Address of the meme token
     function collectPoolFees(address meme) external onlyOwner {
        IERC20MEME(meme).collectPoolFees();
     }
 
+    /// @notice Creates a new ERC20 token (meme), create liquidity pool for meme
+    /// and provide initial liquidity to pool
+    /// @param name Name of the token
+    /// @param symbol Symbol of the token
+    /// @param tokenPair Address of the paired token (token with which a pool is created)
+    /// @return Address of the newly created ERC20 token proxy
     function createERC20(
         string memory name,
         string memory symbol,
@@ -122,11 +170,12 @@ contract MemeFactory is
         return proxyAddress;
     }
 
+    /// @notice Updates the implementation contract for all deployed tokens
+    /// @param newImplementation Address of the new implementation contract
     function updateImplementation(address newImplementation) external onlyOwner {
         require(newImplementation.code.length > 0, "Invalid implementation");
         implementation = newImplementation;
         emit ImplementationUpdated(newImplementation);
-
         uint256 length = memeListArray.length;
         for (uint256 i = 0; i < length; i++) {
             address proxy = memeListArray[i];
