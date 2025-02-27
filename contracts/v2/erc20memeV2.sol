@@ -1,23 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ERC20Upgradeable, IERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-import "../interfaces/IMemeFactory.sol";
-import "../config.sol";
-import "../interfaces/igetLiqudity.sol";
-import "../ERC20PoolV3.sol";
-import "../Versioned.sol";
+import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import {IV3SwapRouter} from "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
-contract ERC20MEMEV2 is
+import {IMemeFactory} from "./interfaces/IMemeFactory.sol";
+import {Config} from "./config.sol";
+import {igetLiquidity} from "./interfaces/igetLiqudity.sol";
+import {ERC20PoolV3} from "./ERC20PoolV3.sol";
+import {Versioned} from "./Versioned.sol";
+
+contract ERC20MEME is
     Initializable,
     ERC20Upgradeable,
     OwnableUpgradeable,
@@ -26,7 +28,9 @@ contract ERC20MEMEV2 is
     ERC20PoolV3,
     Versioned 
 {
-    event Mint(address to, uint256 amount, uint256 spended);
+    using SafeERC20 for IERC20;
+
+    event Mint(address indexed to, uint256 amount, uint256 poolAmount, uint256 protocolFee);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -52,29 +56,25 @@ contract ERC20MEMEV2 is
  
     function mint(address to, uint256 amount) public {
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
-        uint256 withdrow = poolAmount + protocolFee;
+        uint256 withdraw = poolAmount + protocolFee;
         require(
-            withdrow > 0,
+            withdraw > 0,
             "The withdrowAmount greater than zero is required for a mint."
         );
-        require(
-            IERC20(pairedToken).transferFrom(msg.sender, address(this), poolAmount),
-            "Transfer token failed"
-        );
-        require(
-            IERC20(pairedToken).transferFrom(msg.sender, owner(), protocolFee),
-            "Transfer token failed"
-        );
+        IERC20(pairedToken).safeTransferFrom(msg.sender, address(this), withdraw);
+        IERC20(pairedToken).safeTransfer(owner(), protocolFee);
 
         swap(pairedToken, poolAmount/2);
         addLiquidity();
         _mint(to, amount);
-        emit Mint(to, amount, withdrow);
+
+        emit Mint(to, amount, poolAmount, protocolFee);
     }
 
     function calculatePrice(
         uint256 amount
     ) public view returns (uint256 poolAmount, uint256 protocolFee) {
+        require(amount > 0, "Amount must be greater than zero.");
         poolAmount =
             calculateValue(totalSupply() + amount) - calculateValue(totalSupply());
         protocolFee = (poolAmount * config.protocolFee) / 100000;
@@ -90,8 +90,9 @@ contract ERC20MEMEV2 is
     function collectPoolFees() external onlyOwner {
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
-        IERC20(token0).transferFrom(msg.sender, owner(), amount0);
-        IERC20(token1).transferFrom(msg.sender, owner(), amount1);
+        require(((amount0>0)||(amount1>0)), "Amount must be not 0");
+        IERC20(token0).safeTransfer(owner(), amount0);
+        IERC20(token1).safeTransfer(owner(), amount1);
     }
 
     function _authorizeUpgrade(

@@ -73,11 +73,8 @@ contract MemeFactory is Initializable, OwnableUpgradeable, UUPSUpgradeable, Paus
         emit ProtocolFeeWithdrawn(tokenAddress, amount);
     }
 
-    function collectPoolsFees() external onlyOwner {
-        uint256 length = memeListArray.length;
-        for (uint256 i = 0; i < length; i++) {
-            IERC20MEME(memeListArray[i]).collectPoolFees();
-        }
+    function collectPoolFees(address meme) external onlyOwner {
+       IERC20MEME(meme).collectPoolFees();
     }
 
     function createERC20(

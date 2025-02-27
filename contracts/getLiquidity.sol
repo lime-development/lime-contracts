@@ -23,6 +23,7 @@ contract getLiquidityHelper {
         return uint160((sqrtPrice * (1 << 96)) / 1e9); // Adjust for precision
     }
 
+    //ToDo Fix TICK_ 
     function getLiquidity(
         uint256 amount0,
         uint256 amount1,

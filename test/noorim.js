@@ -150,10 +150,11 @@ describe("Test MemeFactory", function () {
       await newMEME.mint(owner, amount);
     }
     expect(await newMEME.balanceOf(owner)).to.equal(amount*Try);
+    console.log()
     console.log("Fabric balance before Fee - MEME",  await newMEME.balanceOf(await factory.getAddress()));
     console.log("Fabric balance before Fee - wISLM", await wISLM.balanceOf(await factory.getAddress()));
     //ToDo
-    await factory.collectPoolsFees();
+    await factory.collectPoolFees(await newMEME.getAddress());
     console.log("Fabric balance before after - MEME",  await newMEME.balanceOf(await factory.getAddress()));
     console.log("Fabric balance before after - wISLM", await wISLM.balanceOf(await factory.getAddress()));
 

@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
-import "./config.sol";
-import "./interfaces/igetLiqudity.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import {IV3SwapRouter} from "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
+import {Config} from "./config.sol";
+import {igetLiquidity} from "./interfaces/igetLiqudity.sol";
+
+//ToDo R&D NonfungiblePositionManager?
 
 contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
+    using SafeERC20 for IERC20;
+
     event PoolCreated(address token0, address token1, address pool);
     event TokenInitialized(address pairedToken, address pool);
     event PriceSetuped(address pool, uint160 sqrtPriceX96);
@@ -26,7 +31,6 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         __Ownable_init(msg.sender);
         pairedToken = _pairedToken;
         config = _config;
-        IERC20(pairedToken).approve(config.swapRouter, type(uint256).max);
     }
 
     function initializePool() public onlyOwner {
@@ -73,7 +77,6 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         emit PriceSetuped(pool, sqrtPriceX96);
     }
 
-
     function uniswapV3MintCallback(
         uint256 amount0,
         uint256 amount1,
@@ -81,16 +84,15 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     ) public {
         require(msg.sender == pool, "Callback must be from pool");
         (address token0, address token1) = abi.decode(data, (address, address));
-        IERC20(token0).transfer(msg.sender, amount0);
-        IERC20(token1).transfer(msg.sender, amount1);
+        IERC20(token0).safeTransfer(msg.sender, amount0);
+        IERC20(token1).safeTransfer(msg.sender, amount1);
         emit AddedLiquidity(token0, amount0, token1, amount1);
     }
-
 
     function swap(address tokenIn, uint256 amount) internal {
         require(pool != address(0), "Pool must be created");
         require(IERC20(tokenIn).balanceOf(address(this)) >= amount, "Insufficient balance for Swap");
-        IERC20(tokenIn).approve(config.swapRouter, type(uint256).max);
+        IERC20(tokenIn).safeIncreaseAllowance(config.swapRouter, amount);
 
         address tokenOut = (address(this) == tokenIn) ? pairedToken : address(this);
 
@@ -107,7 +109,6 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         );
         require(amountOut > 0, "Swap failed");
         emit Swaped(tokenIn, amount, tokenOut, amountOut);
-
     }
 
     function addLiquidity() internal {
@@ -116,11 +117,11 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
 
         uint256 amount0 = IERC20(token0).balanceOf(address(this));
         require(amount0 > 0, "Amount of token0 must be greater than 0");
-        IERC20(token0).approve(pool, amount0);
+        IERC20(token0).safeIncreaseAllowance(pool, amount0);
 
         uint256 amount1 = IERC20(token1).balanceOf(address(this));
         require(amount1 > 0, "Amount of token1 must be greater than 0");
-        IERC20(token1).approve(pool, amount1);
+        IERC20(token1).safeIncreaseAllowance(pool, amount1);
 
         (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
 
