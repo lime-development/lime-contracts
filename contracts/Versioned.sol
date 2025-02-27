@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
+// 
+// This software is licensed under the MIT License for non-commercial use only.
+// Commercial use requires a separate agreement with the author.
 pragma solidity ^0.8.20;
 
 contract Versioned  {
-    // Функция для получения хеша версии
     function version() public view returns (bytes32) {
         address _address = address(this);
         uint256 size;
@@ -14,8 +16,6 @@ contract Versioned  {
         assembly {
             extcodecopy(_address, add(bytecode, 0x20), 0, size)
         }
-
-        // Хешируем байткод с помощью keccak256
         return keccak256(bytecode);
     }
 }

@@ -1,4 +1,7 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identifier: MIT
+// 
+// This software is licensed under the MIT License for non-commercial use only.
+// Commercial use requires a separate agreement with the author.
 pragma solidity =0.7.6;
 
 import '@uniswap/v3-core/contracts/libraries/TickMath.sol';
