@@ -15,6 +15,5 @@ interface igetLiquidity {
         uint256 amountToken1,
         uint256 amountToken0
     ) external pure returns (uint160);
-
-    function sqrt(uint256 x) external pure returns (uint256);
+    
 }

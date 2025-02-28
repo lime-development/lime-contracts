@@ -4,6 +4,7 @@
 // Commercial use requires a separate agreement with the author.
 pragma solidity ^0.8.20;
 
+/**
  * @title Versioned
  * @dev Contract that provides a unique version identifier based on its deployed bytecode.
  * @author Vorobev Sergei
