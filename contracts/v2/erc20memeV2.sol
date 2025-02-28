@@ -13,6 +13,7 @@ import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
+
 import {IMemeFactory} from "../interfaces/IMemeFactory.sol";
 import {Config} from "../config.sol";
 import {igetLiquidity} from "../interfaces/igetLiqudity.sol";
@@ -56,7 +57,7 @@ contract ERC20MEMEV2 is
         return 6;
     }
  
-    function mint(address to, uint256 amount) public {
+    function mint(address to, uint256 amount) public nonReentrant  {
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee;
         require(
@@ -85,8 +86,8 @@ contract ERC20MEMEV2 is
     /// factorial X^2 = 1/3 * X^3
     function calculateValue (
         uint256 amount
-    ) public pure returns (uint256 _price) {
-        _price = ((amount * amount * amount) / 30000000);
+    ) public view returns (uint256 _price) {
+        _price = ((amount * amount) / config.divider);
     }
 
     function collectPoolFees() external onlyOwner {

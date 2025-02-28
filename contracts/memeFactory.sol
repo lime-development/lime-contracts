@@ -57,6 +57,10 @@ contract MemeFactory is
     /// @param newImplementation New implementation contract address
     event ImplementationUpdated(address newImplementation);
 
+    /// @notice Emitted when the fee was collected from token pool 
+    /// @param token token address
+    event CollectedPoolFees(address token);
+
     /// @notice An array of contracts created through the factory.
     address[] public memeListArray;
 
@@ -126,12 +130,6 @@ contract MemeFactory is
         emit ProtocolFeeWithdrawn(tokenAddress, amount);
     }
 
-    /// @notice Collects pool fees from meme token
-    /// @param meme Address of the meme token
-    function collectPoolFees(address meme) external onlyOwner {
-       IERC20MEME(meme).collectPoolFees();
-    }
-
     /// @notice Creates a new ERC20 token (meme), create liquidity pool for meme
     /// and provide initial liquidity to pool
     /// @param name Name of the token
@@ -173,21 +171,53 @@ contract MemeFactory is
         return proxyAddress;
     }
 
-    /// @notice Updates the implementation contract for all deployed tokens
+    /// @notice Updates the implementation contract
     /// @param newImplementation Address of the new implementation contract
     function updateImplementation(address newImplementation) external onlyOwner {
         require(newImplementation.code.length > 0, "Invalid implementation");
         implementation = newImplementation;
-        emit ImplementationUpdated(newImplementation);
+        emit ImplementationUpdated(implementation);
+    }
+
+
+    /// @notice Updates the implementation contract for all deployed tokens
+    function updateTokens() external onlyOwner {
         uint256 length = memeListArray.length;
         for (uint256 i = 0; i < length; i++) {
             address proxy = memeListArray[i];
             try ITransparentUpgradeableProxy(payable(proxy)).upgradeToAndCall(
-                newImplementation, "") {
-                emit ERC20Upgraded(proxy, newImplementation);
+                implementation, "") {
+                emit ERC20Upgraded(proxy, implementation);
             } catch {
                 emit ERC20Upgraded(proxy, address(0));
             }
         }
     }
+
+    /// @notice Updates the implementation contract for target tokens 
+    /// @param meme Address of the target tokens
+    function updateToken(address meme) external onlyOwner {
+        ITransparentUpgradeableProxy(payable(meme)).upgradeToAndCall(
+                implementation, "");
+        emit ERC20Upgraded(meme, implementation);
+    }
+
+    /// @notice Collects pool fees from all token
+    function collectPoolsFees() external onlyOwner {
+        uint256 length = memeListArray.length;
+        for (uint256 i = 0; i < length; i++) {
+            try IERC20MEME(memeListArray[i]).collectPoolFees() {
+                emit CollectedPoolFees(memeListArray[i]);
+            } catch {
+            }
+        }
+    }
+    
+    /// @notice Collects pool fees from meme token
+    /// @param meme Address of the meme token
+    function collectPoolFees(address meme) external onlyOwner {
+       IERC20MEME(meme).collectPoolFees();
+       emit CollectedPoolFees(meme);
+    }
+
 }

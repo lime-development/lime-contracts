@@ -150,14 +150,13 @@ describe("Test MemeFactory", function () {
       await newMEME.mint(owner, amount);
     }
     expect(await newMEME.balanceOf(owner)).to.equal(amount*Try);
-    console.log()
-    console.log("Fabric balance before Fee - MEME",  await newMEME.balanceOf(await factory.getAddress()));
-    console.log("Fabric balance before Fee - wISLM", await wISLM.balanceOf(await factory.getAddress()));
-    //ToDo
+    await factory.createERC20("Test2", "Test2", wEthAddress);
+    await factory.createERC20("Test3", "Test3", wEthAddress);
+    const balanceBefore = await wISLM.balanceOf(await factory.getAddress());
     await factory.collectPoolFees(await newMEME.getAddress());
-    console.log("Fabric balance before after - MEME",  await newMEME.balanceOf(await factory.getAddress()));
-    console.log("Fabric balance before after - wISLM", await wISLM.balanceOf(await factory.getAddress()));
-
+    await factory.collectPoolsFees();
+    const balanceAfter = await wISLM.balanceOf(await factory.getAddress());
+    expect(balanceAfter).to.be.gt(balanceBefore);
   });
 
   it("Update Meme Implementation", async function () {
@@ -179,7 +178,6 @@ describe("Test MemeFactory", function () {
     const mem_v1 = await ethers.getContractAt("ERC20MEME", meme);
     expect(await mem_v1.balanceOf(mem_v1.pool())).to.equal((await factory.getConfig()).initialSupply);
 
-
     const tx2 = await factory.createERC20("Test2", "Test2", wEthAddress);
     const receipt2 = await tx2.wait();
     const meme2 = await getERC20Created(receipt2);
@@ -192,6 +190,9 @@ describe("Test MemeFactory", function () {
     const tx3 = await factory.updateImplementation(await meme_v2.getAddress());
     await tx3.wait();
     expect(await factory.implementation()).to.equal(await meme_v2.getAddress());
+
+    const tx4 = await factory.updateTokens();
+    await tx4.wait();
   });
 
   it("Update factory", async function () {
