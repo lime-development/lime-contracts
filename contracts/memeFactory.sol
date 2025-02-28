@@ -104,6 +104,11 @@ contract MemeFactory is
         });
     }
 
+    /**
+     * @notice Authorizes upgrades to the contract.
+     * @dev This function ensures only the contract owner can upgrade the implementation.
+     * @param newImplementation The address of the new contract implementation.
+     */
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /// @notice Returns the current configuration for ERC20 tokens
