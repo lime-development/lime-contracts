@@ -53,6 +53,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @param amount1 The amount of the token1 token collected as fees.
     event CollectedPoolFees(uint256 amount0, uint256 amount1);
 
+
     address public pool;
     address public pairedToken;
     Config.Token public config;
@@ -107,29 +108,46 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         emit PriceSetuped(pool, sqrtPriceX96);
     }
 
-    /// @notice Performs a token swap using the Uniswap V3 swap router.
+    /// @notice Performs a token swap directly via Uniswap V3 pool.
     /// @param tokenIn The address of the token to swap from.
     /// @param amount The amount of the input token to swap.
     function swap(address tokenIn, uint256 amount) internal {
         require(pool != address(0), "Pool must be created");
         require(IERC20(tokenIn).balanceOf(address(this)) >= amount, "Insufficient balance for swap");
-        IERC20(tokenIn).safeIncreaseAllowance(config.swapRouter, amount);
-
+    
+        IERC20(tokenIn).safeIncreaseAllowance(pool, amount);
+    
         address tokenOut = (tokenIn == address(this)) ? pairedToken : address(this);
+    
+        bool zeroForOne = tokenIn < tokenOut;
 
-        uint256 amountOut = IV3SwapRouter(config.swapRouter).exactInputSingle(
-            IV3SwapRouter.ExactInputSingleParams({
-                tokenIn: tokenIn,
-                tokenOut: tokenOut,
-                fee: config.pool.fee,
-                recipient: address(this),
-                amountIn: amount,
-                amountOutMinimum: 0,
-                sqrtPriceLimitX96: 0
-            })
+        uint160 MIN_SQRT_RATIO = 4295128739;
+        uint160 MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
+
+        uint160 sqrtPriceLimitX96 = zeroForOne ? MIN_SQRT_RATIO + 1 : MAX_SQRT_RATIO - 1;
+    
+        (int256 amount0Delta, int256 amount1Delta) = IUniswapV3Pool(pool).swap(
+            address(this),
+            zeroForOne,
+            int256(amount),
+            sqrtPriceLimitX96,
+            abi.encode(tokenIn, amount)  
         );
+
+        uint256 amountOut = uint256(zeroForOne ? -amount1Delta : -amount0Delta);
         require(amountOut > 0, "Swap failed");
+    
         emit Swapped(tokenIn, amount, tokenOut, amountOut);
+    }
+
+    function uniswapV3SwapCallback(
+        int256 amount0Delta,
+        int256 amount1Delta,
+        bytes calldata data
+    ) external {
+        require(msg.sender == pool, "Callback must be from pool");
+        (address tokenIn, uint256 amount) = abi.decode(data, (address, uint256));
+        IERC20(tokenIn).safeTransfer(msg.sender, amount);
     }
 
     /// @notice Adds liquidity to the Uniswap V3 pool.
