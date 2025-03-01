@@ -32,13 +32,29 @@ contract ERC20MEMEV2 is
 {
     using SafeERC20 for IERC20;
 
+    /// @notice Emitted when new tokens are minted.
+    /// @param to Recipient of the minted tokens.
+    /// @param amount Number of tokens minted.
+    /// @param poolAmount Amount allocated to the liquidity pool.
+    /// @param protocolFee Fee collected for the protocol.
     event Mint(address indexed to, uint256 amount, uint256 poolAmount, uint256 protocolFee);
 
+    
+    /// @dev Constructor disables initializers to prevent direct deployment.
+    /// This contract should be deployed via a proxy using OpenZeppelin's upgradeable mechanism.
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
+    /**
+     * @notice Initializes the ERC20MEME contract.
+     * @dev Can only be called once due to the `initializer` modifier.
+     * Sets the token name, symbol, and initializes inherited upgradeable contracts.
+     * @param name The name of the token.
+     * @param symbol The symbol of the token.
+     * @param pairedToken_ The address of the paired token for liquidity.
+     */
     function initialize(
         string memory name,
         string memory symbol,
@@ -53,10 +69,21 @@ contract ERC20MEMEV2 is
         _mint(address(this), config.initialSupply);
     }
 
+    /**
+     * @notice Overrides the ERC20 decimals function to set 6 decimal places.
+     * @return uint8 The number of decimal places for the token.
+     */
     function decimals() public view virtual override returns (uint8) {
         return 6;
     }
  
+    /**
+     * @notice Mints new tokens and manages liquidity allocation.
+     * The funds received for the mint go into the token's liquidity pool.
+     * @dev Requires non-zero amounts and applies protocol fees.
+     * @param to The address receiving the minted tokens.
+     * @param amount The amount of tokens to mint.
+     */
     function mint(address to, uint256 amount) public nonReentrant  {
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee;
@@ -74,6 +101,12 @@ contract ERC20MEMEV2 is
         emit Mint(to, amount, poolAmount, protocolFee);
     }
 
+    /**
+     * @notice Calculates the required pool contribution and protocol fee for minting tokens.
+     * @param amount The amount of tokens to be minted.
+     * @return poolAmount The required liquidity pool contribution.
+     * @return protocolFee The protocol fee deducted from the pool amount.
+     */
     function calculatePrice(
         uint256 amount
     ) public view returns (uint256 poolAmount, uint256 protocolFee) {
@@ -83,13 +116,22 @@ contract ERC20MEMEV2 is
         protocolFee = (poolAmount * config.protocolFee) / 100000;
     }
 
-    /// factorial X^2 = 1/3 * X^3
+    /**
+     * @notice Computes a liquidity-based valuation using a cubic function.
+     * @dev Uses the formula: factorial X = 1/2 * X^2 / divider`.
+     * @param amount The token amount to calculate its value.
+     * @return _price The computed value based on liquidity mechanics.
+     */ 
     function calculateValue (
         uint256 amount
     ) public view returns (uint256 _price) {
         _price = ((amount * amount) / config.divider);
     }
 
+    /**
+     * @notice Collects accumulated pool fees and transfers them to the contract owner.
+     * @dev Ensures at least one token amount is greater than zero.
+     */
     function collectPoolFees() external onlyOwner {
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
@@ -98,6 +140,11 @@ contract ERC20MEMEV2 is
         IERC20(token1).safeTransfer(owner(), amount1);
     }
 
+    /**
+     * @notice Authorizes upgrades to the contract.
+     * @dev This function ensures only the contract owner can upgrade the implementation.
+     * @param newImplementation The address of the new contract implementation.
+     */
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}

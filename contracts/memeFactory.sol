@@ -73,13 +73,11 @@ contract MemeFactory is
     /**
      * @notice Initializes the Factory with initial configuration for ERC20
      * @param _initialImplementation Address of the initial implementation contract
-     * @param swapRouterAddress Address of the UniSwapV3 swap router
      * @param factoryAddress Address of the UniSwapV3 factory
      * @param _getLiquidity Address for obtaining liquidity information
      */
     function initialize(
         address _initialImplementation,
-        address swapRouterAddress,
         address factoryAddress,
         address _getLiquidity
     ) public initializer() {
@@ -88,7 +86,6 @@ contract MemeFactory is
         __ReentrancyGuard_init();
         implementation = _initialImplementation;
         config = Config.Token({
-            swapRouter: swapRouterAddress,
             factory: factoryAddress,
             getLiquidity: _getLiquidity,
             initialSupply: 10000000,

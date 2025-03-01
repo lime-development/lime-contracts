@@ -13,7 +13,6 @@ contract Config {
     }
 
     struct Token {
-        address swapRouter;
         address factory;
         address getLiquidity;
         uint256 initialSupply;

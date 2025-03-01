@@ -3,7 +3,6 @@ const { MaxUint256 } = require("ethers");
 const { ethers, upgrades } = require("hardhat");
 const { bigint } = require("hardhat/internal/core/params/argumentTypes");
 
-let swapRouterAddress; 
 let factoryAddress;
 let WrapToken;
 
@@ -60,7 +59,6 @@ async function getERC20Created(receipt){
 
 async function sepolia(){
   console.log("sepolia fork config");
-  swapRouterAddress = "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E";
   factoryAddress = "0x0227628f3F023bb0B980b67D528571c95c6DaC1c";
   WrapToken = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"
 
@@ -74,7 +72,6 @@ async function sepolia(){
 
 async function haqq(){
   console.log("haqq fork config");
-  swapRouterAddress = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f";
   factoryAddress = "0xc35DADB65012eC5796536bD9864eD8773aBc74C4";
   WrapToken = "0xeC8CC083787c6e5218D86f9FF5f28d4cC377Ac54"
 
@@ -116,7 +113,7 @@ before(async function () {
 
   MemeFactory = await ethers.getContractFactory("MemeFactory");
   factory = await upgrades.deployProxy( MemeFactory,
-    [await meme.getAddress(), swapRouterAddress, factoryAddress, await getLiquidity.getAddress()]
+    [await meme.getAddress(), factoryAddress, await getLiquidity.getAddress()]
   );
   await factory.waitForDeployment();
 
@@ -149,7 +146,7 @@ describe("Test MemeFactory", function () {
       await getTokenMetrics(newMEME, amount, ethers);
     }
   });*/
-  
+
   it("Mint Meme ", async function () {
     const tx = await factory.createERC20("Test", "Test", WrapToken);
     const receipt = await tx.wait();
