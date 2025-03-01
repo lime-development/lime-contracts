@@ -4,7 +4,7 @@ require("@nomiclabs/hardhat-truffle5");
 require("@nomicfoundation/hardhat-verify");
 require("dotenv").config(); 
 
-const network = process.env.NETWORK;
+const network = process.env.NETWORK || "sepolia";
 
 const FORK_CONFIGS = {
   sepolia: {
