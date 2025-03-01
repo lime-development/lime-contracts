@@ -3,21 +3,9 @@ const { MaxUint256 } = require("ethers");
 const { ethers, upgrades } = require("hardhat");
 const { bigint } = require("hardhat/internal/core/params/argumentTypes");
 
-//HAQQ Mainnet
-/*
-const swapRouterAddress ="0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f";
-const factoryAddress = "0xc35DADB65012eC5796536bD9864eD8773aBc74C4";
-const wISLMAddress = "0xeC8CC083787c6e5218D86f9FF5f28d4cC377Ac54"
-const wISLMWhale = "0x47097845D0bcA6BD60f7cC4Bf524c9964DbB3140"
-*/
-
-//Sepolia
-const swapRouterAddress = "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E";
-const factoryAddress = "0x0227628f3F023bb0B980b67D528571c95c6DaC1c";
-const wEthAddress = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"
-//ToDO!!!!!
-//const wEthAddress = "0xE49ACc3B16c097ec88Dc9352CE4Cd57aB7e35B95"
-const wEthWhale = "0xBaEb92889696217A3A6be2175E5a95dC4cFFC9f7"
+let swapRouterAddress; 
+let factoryAddress;
+let WrapToken;
 
 async function getTokenMetrics(newMEME, amount, ethers) {
   // Get total cost and fee
@@ -70,29 +58,59 @@ async function getERC20Created(receipt){
   return  erc20CreatedEvents[0];
 }
 
+async function sepolia(){
+  console.log("sepolia fork config");
+  swapRouterAddress = "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E";
+  factoryAddress = "0x0227628f3F023bb0B980b67D528571c95c6DaC1c";
+  WrapToken = "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14"
+
+  const wEthWhale = "0xBaEb92889696217A3A6be2175E5a95dC4cFFC9f7"
+  const wETH = await ethers.getContractAt("ERC20", WrapToken);
+  await ethers.provider.send("hardhat_impersonateAccount", [wEthWhale]);
+  const whaleSigner = await ethers.getSigner(wEthWhale);
+  const transferAmount = ethers.parseUnits("1350", 18); // 1350 wETH
+  const tx = await wETH.connect(whaleSigner).transfer(owner.address, transferAmount);
+}
+
+async function haqq(){
+  console.log("haqq fork config");
+  swapRouterAddress = "0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f";
+  factoryAddress = "0xc35DADB65012eC5796536bD9864eD8773aBc74C4";
+  WrapToken = "0xeC8CC083787c6e5218D86f9FF5f28d4cC377Ac54"
+
+  const wISLMWhale = "0x6A0ea3a37711928e646d0B3258781EB8b7732D1d"
+  const wISLM = await ethers.getContractAt("ERC20", WrapToken);
+  await ethers.provider.send("hardhat_impersonateAccount", [wISLMWhale]);
+  const whaleSigner = await ethers.getSigner(wISLMWhale);
+  const transferAmount = ethers.parseUnits("1350", 18); // 1000 wISLM
+  const tx = await wISLM.connect(whaleSigner).transfer(owner.address, transferAmount);
+}
+
 
 before(async function () {
   [owner] = await ethers.getSigners();
+  const network = process.env.NETWORK 
+  switch (network) {
+    case "haqq":
+      await haqq();
+      break;
+    case "sepolia":
+      await sepolia();
+      break;
+    default:
+      await sepolia();
+  }
+  
+  const wrapedToken = await ethers.getContractAt("IERC20", WrapToken);
+  const wrapBalance = await wrapedToken.balanceOf(owner.address);
+  const gasBalance = await ethers.provider.getBalance(owner.address);
+  console.log("Owner:", owner.address, "wrapBalance:", wrapBalance, "gasBalance:", gasBalance);
+
   const LiquidityFactory = await ethers.getContractFactory("getLiquidityHelper");
   getLiquidity = await LiquidityFactory.deploy();
   await getLiquidity.waitForDeployment();
-  /*//Get wISLM 
-  const wISLM = await ethers.getContractAt("IERC20", wISLMAddress);
-  await ethers.provider.send("hardhat_impersonateAccount", [wISLMWhale]);
-  const whaleSigner = await ethers.getSigner(wISLMWhale);
-  const whaleBalanceBefore = await wISLM.balanceOf(wISLMWhale);
-  const transferAmount = ethers.parseUnits("1000", 18); // 1000 wISLM
-  await wISLM.connect(whaleSigner).transfer(owner.address, transferAmount); */
-
-  //Get wISLM 
-  const Weth = await ethers.getContractAt("ERC20", wEthAddress);
-  await ethers.provider.send("hardhat_impersonateAccount", [wEthWhale]);
-  const whaleSigner = await ethers.getSigner(wEthWhale);
-  const transferAmount = ethers.parseUnits("1350", 18); // 1 Weth
-  const tx = await Weth.connect(whaleSigner).transfer(owner.address, transferAmount);
  
   const ContractMeme = await ethers.getContractFactory("ERC20MEME");
-
   meme = await ContractMeme.deploy();
   await meme.waitForDeployment();
 
@@ -101,6 +119,8 @@ before(async function () {
     [await meme.getAddress(), swapRouterAddress, factoryAddress, await getLiquidity.getAddress()]
   );
   await factory.waitForDeployment();
+
+  await wrapedToken.approve(factory.getAddress(), MaxUint256);
 });
 
 describe("Test MemeFactory", function () {
@@ -109,53 +129,48 @@ describe("Test MemeFactory", function () {
   });
 
   it("Create Meme", async function () {
-    const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
-    await wISLM.approve(factory.getAddress(), MaxUint256);
-
-    const tx = await factory.createERC20("Test", "Test", wEthAddress);
+    const tx = await factory.createERC20("Test", "Test", WrapToken);
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);
     expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply);
   });
-/*
+  /*
   it("Math test", async function () {
-    const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
+    const wISLM = await ethers.getContractAt("IERC20", WrapToken);
     await wISLM.approve(factory.getAddress(), MaxUint256);
 
-    const tx = await factory.createERC20("Test", "Test", wEthAddress);
+    const tx = await factory.createERC20("Test", "Test", WrapToken);
     const receipt = await tx.wait();
-    const newMEME = await ethers.getContractAt("ERC20MEME", await factory.memelist(1));
+    const meme = await getERC20Created(receipt);
+    const newMEME = await ethers.getContractAt("ERC20MEME", meme);
   
     for (let amount = BigInt(1000); amount < BigInt(100000000000); amount=amount*BigInt(10)) {
       await getTokenMetrics(newMEME, amount, ethers);
     }
-  });
-*/
-
+  });*/
+  
   it("Mint Meme ", async function () {
-    const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
-    await wISLM.approve(factory.getAddress(), MaxUint256);
-
-    const tx = await factory.createERC20("Test", "Test", wEthAddress);
+    const tx = await factory.createERC20("Test", "Test", WrapToken);
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);
     expect(await newMEME.balanceOf(newMEME.pool())).to.equal((await factory.getConfig()).initialSupply);
 
-    await wISLM.approve(await newMEME.getAddress(), MaxUint256);
+    const wrapedToken = await ethers.getContractAt("IERC20", WrapToken);
+    await wrapedToken.approve(await newMEME.getAddress(), MaxUint256);
     const amount = 1000000;
     const Try = 100;
     for (let mintTry = 0; mintTry < Try; mintTry++) {
       await newMEME.mint(owner, amount);
     }
     expect(await newMEME.balanceOf(owner)).to.equal(amount*Try);
-    await factory.createERC20("Test2", "Test2", wEthAddress);
-    await factory.createERC20("Test3", "Test3", wEthAddress);
-    const balanceBefore = await wISLM.balanceOf(await factory.getAddress());
+    await factory.createERC20("Test2", "Test2", WrapToken);
+    await factory.createERC20("Test3", "Test3", WrapToken);
+    const balanceBefore = await wrapedToken.balanceOf(await factory.getAddress());
     await factory.collectPoolFees(await newMEME.getAddress());
     await factory.collectPoolsFees();
-    const balanceAfter = await wISLM.balanceOf(await factory.getAddress());
+    const balanceAfter = await wrapedToken.balanceOf(await factory.getAddress());
     expect(balanceAfter).to.be.gt(balanceBefore);
   });
 
@@ -169,16 +184,13 @@ describe("Test MemeFactory", function () {
     const meme_v2 = await ContractMemeV2.deploy();
     await meme_v2.waitForDeployment();
 
-    const wISLM = await ethers.getContractAt("IERC20", wEthAddress);
-    await wISLM.approve(factory.getAddress(), MaxUint256);
-
-    const tx = await factory.createERC20("Test1", "Test1", wEthAddress);
+    const tx = await factory.createERC20("Test1", "Test1", WrapToken);
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const mem_v1 = await ethers.getContractAt("ERC20MEME", meme);
     expect(await mem_v1.balanceOf(mem_v1.pool())).to.equal((await factory.getConfig()).initialSupply);
 
-    const tx2 = await factory.createERC20("Test2", "Test2", wEthAddress);
+    const tx2 = await factory.createERC20("Test2", "Test2", WrapToken);
     const receipt2 = await tx2.wait();
     const meme2 = await getERC20Created(receipt2);
     const mem_v2 = await ethers.getContractAt("ERC20MEME", meme2);

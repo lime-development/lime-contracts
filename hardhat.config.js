@@ -1,7 +1,26 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@openzeppelin/hardhat-upgrades");
 require("@nomiclabs/hardhat-truffle5");
+require("@nomicfoundation/hardhat-verify");
 require("dotenv").config(); 
+
+const network = process.env.NETWORK;
+
+const FORK_CONFIGS = {
+  sepolia: {
+    url: "https://sepolia.drpc.org", 
+    blockNumber: 7807110, 
+  },
+  haqq: {
+    url: "https://rpc.eth.haqq.network",
+    blockNumber: 15652600,
+  }
+};
+
+// Проверяем, существует ли указанная сеть
+if (!FORK_CONFIGS[network]) {
+  throw new Error(`❌ Unknown network: ${network}`);
+}
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -25,31 +44,28 @@ module.exports = {
             runs: 1000,
           }, 
         }
-      },
+      }
     ],
   },  
   networks: {
-    local: {
-      url: `http://127.0.0.1:7545`,
-      accounts: [process.env.PRIVATE_KEY]
-    },
     hardhat: {
-    /* forking: {
-        url: "https://rpc.eth.haqq.network", 
-        blockNumber: 15255512, 
-      },*/
       forking: {
-        url: "https://sepolia.drpc.org", 
-        blockNumber: 7771743, 
+        url: FORK_CONFIGS[network].url,
+        blockNumber: FORK_CONFIGS[network].blockNumber,
       },
+      
     },
-    haqq_test: {
+    'haqq-testedge2': {
       url: `https://rpc.eth.testedge2.haqq.network`,
-      accounts: [process.env.PRIVATE_KEY] 
+      accounts: [process.env.PRIVATE_KEY],
     },
     sepolia: {
-      url: `https://ethereum-sepolia-rpc.publicnode.com`,
-      accounts: [process.env.PRIVATE_KEY]
+      url: "https://sepolia.drpc.org",
+      accounts: [process.env.PRIVATE_KEY],
+    },
+    haqq: {
+      url: "https://rpc.eth.haqq.network",
+      accounts: [process.env.PRIVATE_KEY],
     }
   }
 };

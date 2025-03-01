@@ -23,7 +23,12 @@ jobs:
         env:
             PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
-      - name: Run tests
-        run: npx hardhat test
+      - name: Run tests on fork sepolia
+        run: NETWORK=sepolia npx hardhat test
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}            
+
+      - name: Run test on fork haqq 
+        run: NETWORK=haqq npx hardhat test
         env:
             PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
