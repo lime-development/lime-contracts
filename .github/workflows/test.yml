@@ -27,6 +27,21 @@ jobs:
         run: NETWORK=sepolia npx hardhat test
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}            
+      
+      - name: Run tests on fork base
+        run: NETWORK=base npx hardhat test
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
+      
+      - name: Run tests on fork bnb
+        run: NETWORK=bnb npx hardhat test
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
+      
+      - name: Run tests on fork ethereum
+        run: NETWORK=ethereum npx hardhat test
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}       
 
       - name: Run test on fork haqq 
         run: NETWORK=haqq npx hardhat test

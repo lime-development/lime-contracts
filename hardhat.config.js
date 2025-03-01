@@ -11,6 +11,18 @@ const FORK_CONFIGS = {
     url: "https://sepolia.drpc.org", 
     blockNumber: 7807110, 
   },
+  ethereum: {
+    url: "https://eth.drpc.org", 
+    blockNumber: 21954300, 
+  },
+  base: {
+    url: "https://rpc.ankr.com/base", 
+    blockNumber: 27035700, 
+  },
+  bnb: {
+    url: "https://rpc.ankr.com/bsc",
+    blockNumber: 47093000, 
+  },
   haqq: {
     url: "https://rpc.eth.haqq.network",
     blockNumber: 15652600,
