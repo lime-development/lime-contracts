@@ -18,7 +18,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import "./interfaces/IERC20MEME.sol";
 import "./config.sol";
-import "./Versioned.sol";
 
 /**
  * @title MemeFactory
@@ -30,8 +29,7 @@ contract MemeFactory is
         Initializable, 
         OwnableUpgradeable, 
         UUPSUpgradeable, 
-        PausableUpgradeable, 
-        Versioned,
+        PausableUpgradeable,
         ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 

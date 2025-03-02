@@ -17,7 +17,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import "../interfaces/IERC20MEME.sol";
 import "../config.sol";
-import "../Versioned.sol";
 
 
 contract MemeFactoryV2 is 
@@ -214,7 +213,7 @@ contract MemeFactoryV2 is
        IERC20MEME(meme).collectPoolFees();
        emit CollectedPoolFees(meme);
     }
-    
+
     function version() public pure returns (string memory) {
         return "2.1.0";
     }

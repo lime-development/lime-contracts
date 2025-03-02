@@ -18,7 +18,6 @@ import {IMemeFactory} from "./interfaces/IMemeFactory.sol";
 import {Config} from "./config.sol";
 import {igetLiquidity} from "./interfaces/igetLiqudity.sol";
 import {ERC20PoolV3} from "./ERC20PoolV3.sol";
-import {Versioned} from "./Versioned.sol";
 
 /**
  * @title ERC20MEME
@@ -39,8 +38,7 @@ contract ERC20MEME is
     ERC20PermitUpgradeable,
     UUPSUpgradeable,
     ERC20PoolV3,
-    ReentrancyGuardUpgradeable,
-    Versioned 
+    ReentrancyGuardUpgradeable 
 {
     using SafeERC20 for IERC20;
 
