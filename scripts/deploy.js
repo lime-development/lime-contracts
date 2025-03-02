@@ -34,11 +34,23 @@ async function main() {
   console.log("Deploy factory with Meme:", await meme.getAddress(), 
               " UniswapV3 Facrory:",config.factory,
               " liquidityHelper:", await liquidityHelper.getAddress());
-  const instance = await upgrades.deployProxy(ContractFactory, [
-    await meme.getAddress(),
-    config.factory, // Используем адрес Uniswap v3 Factory для выбранной сети
-    await liquidityHelper.getAddress()
-  ]);
+
+    const factoryConfig = {
+      factory: config.factory,
+      getLiquidity: await liquidityHelper.getAddress(),
+      initialSupply: 10000000,
+      protocolFee: 2500,
+      initialMintCost: ethers.parseUnits("0.01", "ether"),
+      divider: 30000000,
+      pool: {
+          fee: 3000,
+          tickSpacing: 60,
+          minTick: -887272,
+          maxTick: 887272
+      }
+  };
+  
+  const instance = await upgrades.deployProxy(ContractFactory, [await meme.getAddress(), factoryConfig]);
   await instance.waitForDeployment();
   console.log(`MemeFactory deployed to: ${await instance.getAddress()}`);
 }

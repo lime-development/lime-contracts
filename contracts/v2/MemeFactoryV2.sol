@@ -64,33 +64,18 @@ contract MemeFactoryV2 is
 
     /**
      * @notice Initializes the Factory with initial configuration for ERC20
-     * @param _initialImplementation Address of the initial implementation contract
-     * @param factoryAddress Address of the UniSwapV3 factory
-     * @param _getLiquidity Address for obtaining liquidity information
+     * @param initialImplementation_ Address of the initial implementation contract
+     * @param config_ Factory and meme token configuration
      */
     function initialize(
-        address _initialImplementation,
-        address factoryAddress,
-        address _getLiquidity
+        address initialImplementation_,
+        Config.Token calldata config_
     ) public initializer() {
         __Ownable_init(msg.sender); 
         __Pausable_init();
         __ReentrancyGuard_init();
-        implementation = _initialImplementation;
-        config = Config.Token({
-            factory: factoryAddress,
-            getLiquidity: _getLiquidity,
-            initialSupply: 10000000,
-            protocolFee: 2500,
-            initialMintCost: 10000000000000000,
-            divider: 30000000,
-            pool: Config.Pool({
-                fee: 3000,
-                tickSpacing: 60,
-                minTick: -887272,
-                maxTick: 887272
-            })
-        });
+        implementation = initialImplementation_;
+        config = config_;
     }
 
     /**

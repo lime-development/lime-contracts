@@ -75,9 +75,24 @@ before(async function () {
   meme = await ContractMeme.deploy();
   await meme.waitForDeployment();
 
+  const config = {
+    factory: factoryAddress,
+    getLiquidity: await getLiquidity.getAddress(),
+    initialSupply: 10000000,
+    protocolFee: 2500,
+    initialMintCost: ethers.parseUnits("0.01", "ether"),
+    divider: 30000000,
+    pool: {
+        fee: 3000,
+        tickSpacing: 60,
+        minTick: -887272,
+        maxTick: 887272
+    }
+};
+
   MemeFactory = await ethers.getContractFactory("MemeFactory");
   factory = await upgrades.deployProxy( MemeFactory,
-    [await meme.getAddress(), factoryAddress, await getLiquidity.getAddress()]
+    [await meme.getAddress(), config]
   );
   await factory.waitForDeployment();
   await wrapedToken.approve(await factory.getAddress(), MaxUint256);
@@ -157,7 +172,7 @@ describe("Test MemeFactory", function () {
 
     const tx3 = await factory.updateTokens();
     await tx3.wait();
-    
+
     const value_v2 = await mem_v1.calculateValue(10000);
     expect(value_v1).to.not.equal(value_v2);
   });
