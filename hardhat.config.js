@@ -20,8 +20,9 @@ const FORK_CONFIGS = {
     blockNumber: 27035700, 
   },
   bnb: {
-    url: "https://rpc.ankr.com/bsc",
-    blockNumber: 47093000, 
+    //url: "https://rpc.ankr.com/bsc",
+    url: "https://bscrpc.com",
+    blockNumber: 47154400, 
   },
   haqq: {
     url: "https://rpc.eth.haqq.network",
