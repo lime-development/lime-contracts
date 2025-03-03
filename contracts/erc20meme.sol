@@ -135,7 +135,7 @@ contract ERC20MEME is
     function calculateValue (
         uint256 amount
     ) public view returns (uint256 _price) {
-        _price = ((amount * amount * amount) / config.divider);
+        _price = ((amount ** 2) / config.divider) +  config.initialMintCost*amount/config.initialSupply;
     }
 
     /**

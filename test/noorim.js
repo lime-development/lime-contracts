@@ -13,21 +13,25 @@ const networks = {
 let factoryAddress, WrapToken, owner;
 
 async function getTokenMetrics(newMEME, amount) {
-  const [initCost] = await newMEME.calculatePrice(1);
-  const [cost_, fee] = await newMEME.calculatePrice(amount);
-  const [nextCost] = await newMEME.calculatePrice(amount + BigInt(1));
+  const decimals = BigInt(10) ** await newMEME.decimals();
+  tokens = BigInt(amount) * decimals;
+  const [initCost] = await newMEME.calculatePrice(decimals);
+  const [cost_, fee] = await newMEME.calculatePrice(tokens);
+  const [nextCost] = await newMEME.calculatePrice(tokens + decimals);
 
-  const islmPrice = BigInt(37);
-  const islmPriceDiv = BigInt(1000);
+  const islmPrice = BigInt(33070);
+  const islmPriceDiv = BigInt(10**6);
 
   const price = ((nextCost - cost_) * islmPrice) / islmPriceDiv;
-  const marketCap = price * amount;
+  const initPrice = initCost * islmPrice / islmPriceDiv;
+  const marketCap = price * BigInt(amount);
   const feeUSD = (fee * islmPrice) / islmPriceDiv;
-  const growth = ((nextCost - cost_) * BigInt(10000)) / initCost - BigInt(10000);
+  const costUSD = (cost_ * islmPrice) / islmPriceDiv;
+  const growth = (BigInt(100)*price / initPrice - BigInt(100))*BigInt(100);
 
   console.log(
     "Minted:", amount,
-    "; Total spent:", ethers.formatUnits(cost_ + fee, 18),
+    "; Total spent:", ethers.formatUnits(feeUSD + costUSD, 18),
     "; Token price:", ethers.formatUnits(price, 18), "USD",
     "; Growth:", ethers.formatUnits(growth, 2), "%",
     "; Market cap:", ethers.formatUnits(marketCap, 18), "USD",
@@ -78,10 +82,10 @@ before(async function () {
   const config = {
     factory: factoryAddress,
     getLiquidity: await getLiquidity.getAddress(),
-    initialSupply: 10000000,
+    initialSupply: BigInt(1000000) * await meme.decimals(),
     protocolFee: 2500,
-    initialMintCost: ethers.parseUnits("0.01", "ether"),
-    divider: 30000000,
+    initialMintCost: ethers.parseUnits("0.02", "ether"),
+    divider: 300,
     pool: {
         fee: 3000,
         tickSpacing: 60,
@@ -123,7 +127,7 @@ describe("Test MemeFactory", function () {
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);
   
-    for (let amount = BigInt(1000); amount < BigInt(100000000000); amount=amount*BigInt(10)) {
+    for (let amount = BigInt(1000); amount < BigInt(100000000); amount=amount*BigInt(5)) {
       await getTokenMetrics(newMEME, amount, ethers);
     }
   });*/
@@ -136,13 +140,12 @@ describe("Test MemeFactory", function () {
  
     const wrapedToken = await ethers.getContractAt("IERC20", WrapToken);
     await wrapedToken.approve(await newMEME.getAddress(), MaxUint256);
-    const amount = 1000000;
-    const Try = 100;
+    const amount = BigInt(1000) * BigInt(10) ** await newMEME.decimals(); //1000*10^decimals
+    const Try =  BigInt(100);
     for (let mintTry = 0; mintTry < Try; mintTry++) {
       await newMEME.mint(owner, amount);
     }
     expect(await newMEME.balanceOf(owner)).to.equal(amount*Try);
-    await factory.createERC20("Test2", "Test2", WrapToken);
     const balanceBefore = await wrapedToken.balanceOf(await factory.getAddress());
     await factory.collectPoolFees(await newMEME.getAddress());
     await factory.collectPoolsFees();
