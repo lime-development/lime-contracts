@@ -25,7 +25,7 @@ const FORK_CONFIGS = {
   },
   haqq: {
     url: "https://rpc.eth.haqq.network",
-    blockNumber: 15652600,
+    blockNumber: 15687757,
   }
 };
 

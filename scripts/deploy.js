@@ -1,10 +1,4 @@
-const networks = {
-  haqq: { name: "haqq", factory: "0xc35DADB65012eC5796536bD9864eD8773aBc74C4" },
-  sepolia: { name: "sepolia", factory: "0x0227628f3F023bb0B980b67D528571c95c6DaC1c" },
-  base: { name: "base", factory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD" },
-  ethereum: { name: "ethereum", factory: "0x1F98431c8aD98523631AE4a59f267346ea31F984" },
-  bnb: { name: "bnb", factory: "0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7" }
-};
+const { poolConfig, networks } = require("./config");
 
 async function main() {
   const ContractMEME = await ethers.getContractFactory("ERC20MEME");
@@ -35,21 +29,15 @@ async function main() {
               " UniswapV3 Facrory:",config.factory,
               " liquidityHelper:", await liquidityHelper.getAddress());
 
-    const factoryConfig = {
-      factory: config.factory,
-      getLiquidity: await liquidityHelper.getAddress(),
-      initialSupply: 10000000,
-      protocolFee: 2500,
-      initialMintCost: ethers.parseUnits("0.01", "ether"),
-      divider: 30000000,
-      pool: {
-          fee: 3000,
-          tickSpacing: 60,
-          minTick: -887272,
-          maxTick: 887272
-      }
+  const factoryConfig = {
+    factory: config.factory,
+    getLiquidity: await liquidityHelper.getAddress(),
+    initialSupply: config.initialSupply,
+    protocolFee: config.protocolFee,
+    initialMintCost: config.initialMintCost,
+    divider: config.divider,
+    pool: poolConfig
   };
-  
   const instance = await upgrades.deployProxy(ContractFactory, [await meme.getAddress(), factoryConfig]);
   await instance.waitForDeployment();
   console.log(`MemeFactory deployed to: ${await instance.getAddress()}`);
