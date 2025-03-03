@@ -66,11 +66,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run tokenomics script for sepolia
-        run: NETWORK=sepolia npx hardhat run scripts/tokenomics.js
+      - name: Run tokenomics script for haqq
+        run: NETWORK=haqq npx hardhat run scripts/tokenomics.js
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
 
       - name: Run tokenomics script for ethereum
         run: NETWORK=ethereum npx hardhat run scripts/tokenomics.js
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
+
+      - name: Run tokenomics script for sepolia
+        run: NETWORK=sepolia npx hardhat run scripts/tokenomics.js
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
 
       - name: Commit and push changes
         run: |
