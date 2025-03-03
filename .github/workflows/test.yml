@@ -47,3 +47,35 @@ jobs:
         run: NETWORK=haqq npx hardhat test
         env:
             PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+
+  update-tokenomics:
+    needs: test  # Запуск только после успешного прохождения всех тестов
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tokenomics script for sepolia
+        run: NETWORK=sepolia npx hardhat run scripts/tokenomics.js
+
+      - name: Run tokenomics script for ethereum
+        run: NETWORK=ethereum npx hardhat run scripts/tokenomics.js
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update Tokenomics [auto]" || echo "No changes to commit"
+          git push

@@ -2,61 +2,25 @@ const { expect } = require("chai");
 const { MaxUint256 } = require("ethers");
 const { ethers, upgrades } = require("hardhat");
 const { poolConfig, networks } = require("../scripts/config");
+const { getERC20Created,setupNetwork } = require("../scripts/helper");
 
-let factoryAddress, WrapToken, owner;
+let owner, config;
 
-async function getERC20Created(receipt) {
-  const contractInterface = new ethers.Interface(["event ERC20Created(address tokenAddress)"]);
-
-  for (const log of receipt.logs) {
-    try {
-      const parsedLog = contractInterface.parseLog(log);
-      if (parsedLog.name === "ERC20Created") return parsedLog.args[0];
-    } catch (_) { }
-  }
-  return null;
-}
-
-async function setupNetwork(config) {
-  console.log(`${config.name} fork config`);
-  WrapToken = config.token;
-
-  const payToken = await ethers.getContractAt("ERC20", WrapToken);
-  await ethers.provider.send("hardhat_impersonateAccount", [config.whale]);
-  const whaleSigner = await ethers.getSigner(config.whale);
-  await payToken.connect(whaleSigner).transfer(owner.address, ethers.parseUnits("1350", 18));
-
-  const LiquidityFactory = await ethers.getContractFactory("getLiquidityHelper");
-  getLiquidity = await LiquidityFactory.deploy();
-  await getLiquidity.waitForDeployment();
-
+before(async function () {
+  
+  [owner] = await ethers.getSigners();
   const ContractMeme = await ethers.getContractFactory("ERC20MEME");
   meme = await ContractMeme.deploy();
   await meme.waitForDeployment();
-
-  const factoryConfig = {
-    factory: config.factory,
-    getLiquidity: await getLiquidity.getAddress(),
-    initialSupply: config.initialSupply,
-    protocolFee: 2500,
-    initialMintCost: config.initialMintCost,
-    divider: config.divider,
-    pool: poolConfig
-  };
-  return factoryConfig
-}
-
-before(async function () {
-  [owner] = await ethers.getSigners();
   const config = await setupNetwork(networks[process.env.NETWORK] || networks.sepolia);
   MemeFactory = await ethers.getContractFactory("MemeFactory");
   factory = await upgrades.deployProxy(MemeFactory,
     [await meme.getAddress(), config]
   );
   await factory.waitForDeployment();
-
   const wrapedToken = await ethers.getContractAt("ERC20", WrapToken);
-  console.log("Owner:", owner.address, "Balance:", await wrapedToken.balanceOf(owner.address));
+
+  console.log("Owner:", owner.address, "Balance:", await wrapedToken.balanceOf(owner.address), "WrapToken:", WrapToken);
   await wrapedToken.approve(await factory.getAddress(), MaxUint256);
 });
 
