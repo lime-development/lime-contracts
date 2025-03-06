@@ -21,12 +21,11 @@ const FORK_CONFIGS = {
   },
   bnb: {
     //url: "https://rpc.ankr.com/bsc",
-    url: "https://bscrpc.com",
-    blockNumber: 47154400, 
+    url: "https://binance.llamarpc.com",
+    blockNumber: 47228120, 
   },
   haqq: {
     url: "https://rpc.eth.haqq.network",
-    blockNumber: 15687757,
   }
 };
 
