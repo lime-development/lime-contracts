@@ -55,7 +55,7 @@ const poolConfig = {
       networkID: 56,
       initialSupply: BigInt(100000 * 10 ** 6), 
       initialMintCost: BigInt(200 * 10 ** 14),
-      divider: 500000,
+      divider: 1500000,
       protocolFee: 1000,
       factory: "0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7", 
       token: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", 
