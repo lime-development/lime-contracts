@@ -81,12 +81,12 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
 
-      - name: Run tokenomics script for sepolia
+      - name: Run tokenomics script for bnb
         run: NETWORK=bnb npx hardhat run scripts/tokenomics.js
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}    
 
-      - name: Run tokenomics script for sepolia
+      - name: Run tokenomics script for base
         run: NETWORK=base npx hardhat run scripts/tokenomics.js
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
