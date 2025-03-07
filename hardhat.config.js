@@ -16,7 +16,7 @@ const FORK_CONFIGS = {
     blockNumber: 21954300, 
   },
   base: {
-    url: "https://rpc.ankr.com/base", 
+    url: "https://mainnet.base.org", 
     blockNumber: 27035700, 
   },
   bnb: {

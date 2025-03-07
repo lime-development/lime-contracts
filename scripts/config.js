@@ -15,7 +15,7 @@ const poolConfig = {
       protocolFee: 2500,
       factory: "0xc35DADB65012eC5796536bD9864eD8773aBc74C4",
       token: "0xeC8CC083787c6e5218D86f9FF5f28d4cC377Ac54",
-      whale: "0x6A0ea3a37711928e646d0B3258781EB8b7732D1d"
+      whale: "0x25aCd2a3E8CC360D233fF477B7A95C6eD1FD0059"
     },
     sepolia: { 
       name: "sepolia",
@@ -37,7 +37,7 @@ const poolConfig = {
       protocolFee: 1000,
       factory: "0x33128a8fC17869897dcE68Ed026d694621f6FDfD",
       token: "0x4200000000000000000000000000000000000006",
-      whale: "0xC1233286aCdb6bed1A1C902d3ed01960Aaf34e0D" 
+      whale: "0x0172e05392aba65366C4dbBb70D958BbF43304E4" 
     },
     ethereum: { 
       name: "ethereum",
