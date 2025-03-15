@@ -165,10 +165,15 @@ contract MemeFactory is
     }
 
 
-    /// @notice Updates the implementation contract for all deployed tokens
-    function updateTokens() external onlyOwner {
+    /// @notice Updates the implementation contract for a batch of tokens
+    function updateTokensBatch(uint256 startIndex, uint256 batchSize) external onlyOwner {
         uint256 length = memeListArray.length;
-        for (uint256 i = 0; i < length; i++) {
+        uint256 endIndex = startIndex + batchSize;
+        if (endIndex > length) {
+            endIndex = length;
+        }
+    
+        for (uint256 i = startIndex; i < endIndex; i++) {
             address proxy = memeListArray[i];
             try ITransparentUpgradeableProxy(payable(proxy)).upgradeToAndCall(
                 implementation, "") {

@@ -81,7 +81,7 @@ describe("Test MemeFactory", function () {
     await tx2.wait();
     expect(await factory.implementation()).to.equal(await meme_v2.getAddress());
 
-    const tx3 = await factory.updateTokens();
+    const tx3 = await factory.updateTokensBatch(0,1000);
     await tx3.wait();
 
     const value_v2 = await mem_v1.calculateValue(10000);
