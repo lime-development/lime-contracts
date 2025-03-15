@@ -167,6 +167,7 @@ contract MemeFactory is
 
     /// @notice Updates the implementation contract for a batch of tokens
     function updateTokensBatch(uint256 startIndex, uint256 batchSize) external onlyOwner {
+        require(startIndex < memeListArray.length, "Invalid startIndex");
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
         if (endIndex > length) {
@@ -182,14 +183,6 @@ contract MemeFactory is
                 emit ERC20Upgraded(proxy, address(0));
             }
         }
-    }
-
-    /// @notice Updates the implementation contract for target tokens 
-    /// @param meme Address of the target tokens
-    function updateToken(address meme) external onlyOwner {
-        ITransparentUpgradeableProxy(payable(meme)).upgradeToAndCall(
-                implementation, "");
-        emit ERC20Upgraded(meme, implementation);
     }
 
     /// @notice Collects pool fees from all token
@@ -208,6 +201,20 @@ contract MemeFactory is
     function collectPoolFees(address meme) external onlyOwner {
        IERC20MEME(meme).collectPoolFees();
        emit CollectedPoolFees(meme);
+    }
+
+    /**
+     * @notice Pause create new token
+     */
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Unpause create new token
+     */
+    function unpause() public onlyOwner {
+        _unpause();
     }
 
 }

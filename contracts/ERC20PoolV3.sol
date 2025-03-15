@@ -111,7 +111,8 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @notice Performs a token swap directly via Uniswap V3 pool.
     /// @param tokenIn The address of the token to swap from.
     /// @param amount The amount of the input token to swap.
-    function swap(address tokenIn, uint256 amount) internal {
+    /// @param minAmountOut The minium amount of the out token from swap.
+    function swap(address tokenIn, uint256 amount, uint256 minAmountOut) internal returns (uint256 amountOut) {
         require(pool != address(0), "Pool must be created");
         require(IERC20(tokenIn).balanceOf(address(this)) >= amount, "Insufficient balance for swap");
     
@@ -134,15 +135,16 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
             abi.encode(tokenIn, amount)  
         );
 
-        uint256 amountOut = uint256(zeroForOne ? -amount1Delta : -amount0Delta);
-        require(amountOut > 0, "Swap failed");
-    
+        amountOut = uint256(zeroForOne ? -amount1Delta : -amount0Delta);
+        require(amountOut >= minAmountOut, "Slippage too high");
+
         emit Swapped(tokenIn, amount, tokenOut, amountOut);
+        return amountOut;
     }
 
     function uniswapV3SwapCallback(
-        int256 amount0Delta,
-        int256 amount1Delta,
+        int256 /*amount0Delta*/,
+        int256 /*amount1Delta*/,
         bytes calldata data
     ) external {
         require(msg.sender == pool, "Callback must be from pool");

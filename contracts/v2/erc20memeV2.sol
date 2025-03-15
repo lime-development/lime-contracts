@@ -92,7 +92,7 @@ contract ERC20MEMEV2 is
         IERC20(pairedToken).safeTransferFrom(msg.sender, address(this), withdraw);
         IERC20(pairedToken).safeTransfer(owner(), protocolFee);
 
-        swap(pairedToken, poolAmount/2);
+        swap(pairedToken, poolAmount/2, 1);
         addLiquidity();
         _mint(to, amount);
 

@@ -12,7 +12,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 import {IMemeFactory} from "./interfaces/IMemeFactory.sol";
 import {Config} from "./config.sol";
@@ -38,7 +38,8 @@ contract ERC20MEME is
     ERC20PermitUpgradeable,
     UUPSUpgradeable,
     ERC20PoolV3,
-    ReentrancyGuardUpgradeable 
+    ReentrancyGuardUpgradeable,
+    PausableUpgradeable  
 {
     using SafeERC20 for IERC20;
 
@@ -75,6 +76,7 @@ contract ERC20MEME is
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+        __Pausable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
     }
@@ -94,7 +96,7 @@ contract ERC20MEME is
      * @param to The address receiving the minted tokens.
      * @param amount The amount of tokens to mint.
      */
-    function mint(address to, uint256 amount) public nonReentrant  {
+    function mint(address to, uint256 amount) public nonReentrant whenNotPaused {
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee;
         require(
@@ -104,7 +106,7 @@ contract ERC20MEME is
         IERC20(pairedToken).safeTransferFrom(msg.sender, address(this), withdraw);
         IERC20(pairedToken).safeTransfer(owner(), protocolFee);
 
-        swap(pairedToken, poolAmount/2);
+        swap(pairedToken, poolAmount/2, 0);
         addLiquidity();
         _mint(to, amount);
 
@@ -135,6 +137,7 @@ contract ERC20MEME is
     function calculateValue (
         uint256 amount
     ) public view returns (uint256 _price) {
+        require(amount < type(uint128).max, "Amount too large"); 
         _price = ((amount ** 2) / config.divider) +  (config.initialMintCost/config.initialSupply)*amount/10000;
     }
 
@@ -158,4 +161,18 @@ contract ERC20MEME is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
+
+    /**
+     * @notice Pause mint from factory
+     */
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Unpause mint from factory
+     */
+    function unpause() public onlyOwner {
+        _unpause();
+    }
 }
