@@ -166,6 +166,8 @@ contract MemeFactory is
 
 
     /// @notice Updates the implementation contract for a batch of tokens
+    /// @param startIndex Start index of memeListArray
+    /// @param batchSize batch size for memeListArray
     function updateTokensBatch(uint256 startIndex, uint256 batchSize) external onlyOwner {
         require(startIndex < memeListArray.length, "Invalid startIndex");
         uint256 length = memeListArray.length;
@@ -215,6 +217,44 @@ contract MemeFactory is
      */
     function unpause() public onlyOwner {
         _unpause();
+    }
+
+    /**
+     * @notice Pause token batch
+     * @param startIndex Start index of memeListArray
+     * @param batchSize batch size for memeListArray
+     */
+    function pauseTokensBatch(uint256 startIndex, uint256 batchSize) external onlyOwner {
+        require(startIndex < memeListArray.length, "Invalid startIndex");
+        uint256 length = memeListArray.length;
+        uint256 endIndex = startIndex + batchSize;
+        if (endIndex > length) {
+            endIndex = length;
+        }
+    
+        for (uint256 i = startIndex; i < endIndex; i++) {
+            address token = memeListArray[i];
+            IERC20MEME(token).pause();
+        }
+    }
+
+    /**
+     * @notice Unpause token batch
+     * @param startIndex Start index of memeListArray
+     * @param batchSize batch size for memeListArray
+     */
+    function unpauseTokensBatch(uint256 startIndex, uint256 batchSize) external onlyOwner {
+        require(startIndex < memeListArray.length, "Invalid startIndex");
+        uint256 length = memeListArray.length;
+        uint256 endIndex = startIndex + batchSize;
+        if (endIndex > length) {
+            endIndex = length;
+        }
+    
+        for (uint256 i = startIndex; i < endIndex; i++) {
+            address token = memeListArray[i];
+            IERC20MEME(token).unpause();
+        }
     }
 
 }

@@ -26,4 +26,8 @@ interface IMemeFactory {
     function version() external view returns (bytes32);
 
     function collectPoolFees(address meme) external;
+
+    function pause() external;
+
+    function unpause() external;
 }

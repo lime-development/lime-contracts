@@ -40,7 +40,7 @@ describe("Test MemeFactory", function () {
     expect(memeBalance + poolBalance).to.equal((await factory.getConfig()).initialSupply);
   });
 
-  it("Mint Meme ", async function () {
+  it("Mint Meme and Pause/Unpause", async function () {
     const tx = await factory.createERC20("Test", "Test", WrapToken);
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
@@ -49,6 +49,13 @@ describe("Test MemeFactory", function () {
     const wrapedToken = await ethers.getContractAt("IERC20", WrapToken);
     await wrapedToken.approve(await newMEME.getAddress(), MaxUint256);
     const amount = BigInt(1000) * BigInt(10) ** await newMEME.decimals(); //1000*10^decimals
+
+    const tx2 = await factory.pauseTokensBatch(0, 1000);
+    await tx2.wait();
+    await expect(newMEME.mint(owner, amount)).to.be.revertedWithCustomError(newMEME, "EnforcedPause");
+    const tx3 = await factory.unpauseTokensBatch(0, 1000);
+    await tx3.wait();
+
     const Try = BigInt(1);
     for (let mintTry = 0; mintTry < Try; mintTry++) {
       await newMEME.mint(owner, amount);

@@ -33,4 +33,8 @@ interface IERC20MEME {
     function version() external view returns (bytes32);
 
     function pool() external view returns (address);
+
+    function pause() external;
+
+    function unpause() external;
 }
