@@ -1,14 +1,14 @@
-# Noorim
+# Lime
 
-Noorim is a decentralized platform designed to enable anyone to launch their own meme coins with built-in protections against rug pulls. The platform ensures long-term sustainability by adding all funds obtained from minting directly into liquidity pools. Liquidity is further boosted through the partial buyback of tokens from the pool, thereby increasing both the liquidity and the value of the tokens within the pool.
+Lime is a decentralized platform designed to enable anyone to launch their own meme coins with built-in protections against rug pulls. The platform ensures long-term sustainability by adding all funds obtained from minting directly into liquidity pools. Liquidity is further boosted through the partial buyback of tokens from the pool, thereby increasing both the liquidity and the value of the tokens within the pool.
 
 The project is built on a factory pattern, where the main contract acts as a factory that creates custom meme tokens for users, making it easy for anyone to create and launch their own token.
 
 ## Tokentomics 
 
-Noorim democratizes meme coin creation, making it accessible to everyday users and enabling local communities to launch their own meme and social tokens. Unlike traditional token launches where the creator retains control over initial liquidity, Noorim - decentralizing the coin meme and removes the author's control - enforces a mandatory issuance fee. This fee applies whether the token is minted by its creator or any other participant in the network. The collected issuance fees are not allocated to the token creator but instead deposited directly into a Uniswap V3 liquidity pool alongside the meme coin. This mechanism prevents rug pulls, ensuring that liquidity is always present to support market activity.
+Lime democratizes meme coin creation, making it accessible to everyday users and enabling local communities to launch their own meme and social tokens. Unlike traditional token launches where the creator retains control over initial liquidity, Lime - decentralizing the coin meme and removes the author's control - enforces a mandatory issuance fee. This fee applies whether the token is minted by its creator or any other participant in the network. The collected issuance fees are not allocated to the token creator but instead deposited directly into a Uniswap V3 liquidity pool alongside the meme coin. This mechanism prevents rug pulls, ensuring that liquidity is always present to support market activity.
 
-Beyond token issuance, Noorim aims to integrate existing Web3 infrastructure with meme coins, leveraging them as instruments to generate total value locked (TVL) across multiple blockchain networks. By utilizing meme tokens as liquidity drivers within Uniswap V3 pools, Noorim enhances liquidity provisioning, facilitates ecosystem growth, and stimulates higher transaction volumes and user engagement within the broader Web3 landscape.
+Beyond token issuance, Lime aims to integrate existing Web3 infrastructure with meme coins, leveraging them as instruments to generate total value locked (TVL) across multiple blockchain networks. By utilizing meme tokens as liquidity drivers within Uniswap V3 pools, Lime enhances liquidity provisioning, facilitates ecosystem growth, and stimulates higher transaction volumes and user engagement within the broader Web3 landscape.
 
 ### Key Economic Principles
 1. **Mandatory Liquidity Provision:**
@@ -18,7 +18,7 @@ Beyond token issuance, Noorim aims to integrate existing Web3 infrastructure wit
    - The influx of new liquidity fosters higher TVL, increasing protocol utility and sustainability.
 
 2. **Market Impact and Adoption:**
-   - By ensuring fair liquidity allocation, Noorim reduces entry barriers for users interested in meme coins.
+   - By ensuring fair liquidity allocation, Lime reduces entry barriers for users interested in meme coins.
    - Encourages organic TVL and engagement by establishing sustainable liquidity pools.
    - Meme coins become an accessible gateway for users to explore and participate in Web3 ecosystems.
 
