@@ -19,9 +19,7 @@ const FORK_CONFIGS = {
     blockNumber: 27687980, 
   },
   bnb: {
-    //url: "https://rpc.ankr.com/bsc",
-    url: "https://bscrpc.com",
-    blockNumber: 47527950, 
+    url: `https://bnb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
   },
   haqq: {
     url: "https://rpc.eth.haqq.network",
