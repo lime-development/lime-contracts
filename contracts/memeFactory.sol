@@ -129,10 +129,11 @@ contract MemeFactory is
         ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,
             abi.encodeWithSignature(
-                "initialize(string,string,address)",
+                "initialize(string,string,address,address)",
                 name,
                 symbol,
-                tokenPair
+                tokenPair,
+                msg.sender
             )
         );
         address proxyAddress = address(proxy);

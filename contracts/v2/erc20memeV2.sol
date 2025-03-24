@@ -30,6 +30,9 @@ contract ERC20MEMEV2 is
 {
     using SafeERC20 for IERC20;
 
+    /// @notice Token author 
+    address author;
+
     /// @notice Emitted when new tokens are minted.
     /// @param to Recipient of the minted tokens.
     /// @param amount Number of tokens minted.
@@ -52,19 +55,24 @@ contract ERC20MEMEV2 is
      * @param name The name of the token.
      * @param symbol The symbol of the token.
      * @param pairedToken_ The address of the paired token for liquidity.
+     * @param author_ The address of the paired token for liquidity.
      */
     function initialize(
         string memory name,
         string memory symbol,
-        address pairedToken_
+        address pairedToken_,
+        address author_
     ) public initializer {
+        require(pairedToken_!=address(0),"pairedToken must be not 0x0");
         __ERC20_init(name, symbol);
         __Ownable_init(msg.sender);
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+        __Pausable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
+        author = author_;
     }
 
     /**
@@ -82,7 +90,7 @@ contract ERC20MEMEV2 is
      * @param to The address receiving the minted tokens.
      * @param amount The amount of tokens to mint.
      */
-    function mint(address to, uint256 amount) public nonReentrant  {
+    function mint(address to, uint256 amount) public nonReentrant whenNotPaused {
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee;
         require(
@@ -90,9 +98,11 @@ contract ERC20MEMEV2 is
             "The withdrowAmount greater than zero is required for a mint."
         );
         IERC20(pairedToken).safeTransferFrom(msg.sender, address(this), withdraw);
-        IERC20(pairedToken).safeTransfer(owner(), protocolFee);
+        uint256 authorFee = protocolFee/2;
+        IERC20(pairedToken).safeTransfer(author, authorFee);
+        IERC20(pairedToken).safeTransfer(owner(), protocolFee-authorFee);
 
-        swap(pairedToken, poolAmount/2, 1);
+        swap(pairedToken, poolAmount/2, 0);
         addLiquidity();
         _mint(to, amount);
 
@@ -123,7 +133,8 @@ contract ERC20MEMEV2 is
     function calculateValue (
         uint256 amount
     ) public view returns (uint256 _price) {
-        _price = ((amount * amount) / config.divider) + 1;
+        require(amount < type(uint128).max, "Amount too large"); 
+        _price = ((amount ** 2) / config.divider) +  (config.initialMintCost/config.initialSupply)*amount/10000;
     }
 
     /**
@@ -134,9 +145,22 @@ contract ERC20MEMEV2 is
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
         require(((amount0>0)||(amount1>0)), "Amount must be not 0");
-        IERC20(token0).safeTransfer(owner(), amount0);
-        IERC20(token1).safeTransfer(owner(), amount1);
+        uint256 authorAmount0 = amount0/2;
+        uint256 authorAmount1 = amount1/2;
+        IERC20(token0).safeTransfer(author, authorAmount0);
+        IERC20(token1).safeTransfer(author, authorAmount1);
+        IERC20(token0).safeTransfer(owner(), amount0-authorAmount0);
+        IERC20(token1).safeTransfer(owner(), amount1-authorAmount1);
     }
+
+    /**
+     * @notice Authorizes upgrades to the contract.
+     * @dev This function ensures only the contract owner can upgrade the implementation.
+     * @param newImplementation The address of the new contract implementation.
+     */
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 
     /**
      * @notice Authorizes upgrades to the contract.

@@ -8,7 +8,7 @@ let owner, config;
 
 before(async function () {
   
-  [owner] = await ethers.getSigners();
+  [owner,second] = await ethers.getSigners();
   const ContractMeme = await ethers.getContractFactory("ERC20MEME");
   meme = await ContractMeme.deploy();
   await meme.waitForDeployment();
@@ -21,6 +21,7 @@ before(async function () {
   const wrapedToken = await ethers.getContractAt("ERC20", WrapToken);
 
   console.log("Owner:", owner.address, "Balance:", await wrapedToken.balanceOf(owner.address), "WrapToken:", WrapToken);
+  console.log("Second:", second.address, "Balance:", await wrapedToken.balanceOf(second.address));
   await wrapedToken.approve(await factory.getAddress(), MaxUint256);
 });
 
@@ -41,7 +42,10 @@ describe("Test MemeFactory", function () {
   });
 
   it("Mint Meme and Pause/Unpause", async function () {
-    const tx = await factory.createERC20("Test", "Test", WrapToken);
+    const [_, author] = await ethers.getSigners();
+
+    const authorFactory = await ethers.getContractAt("MemeFactory", await factory.getAddress(), author);
+    const tx = await authorFactory.createERC20("Test", "Test", WrapToken);
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);

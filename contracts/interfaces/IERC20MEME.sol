@@ -7,7 +7,8 @@ interface IERC20MEME {
     function initialize(
         string memory name,
         string memory symbol,
-        address pairedToken_
+        address pairedToken_,
+        address author_
     ) external;
 
     function decimals() external view returns (uint8);

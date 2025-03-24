@@ -43,6 +43,9 @@ contract ERC20MEME is
 {
     using SafeERC20 for IERC20;
 
+    /// @notice Token author 
+    address author;
+
     /// @notice Emitted when new tokens are minted.
     /// @param to Recipient of the minted tokens.
     /// @param amount Number of tokens minted.
@@ -65,12 +68,15 @@ contract ERC20MEME is
      * @param name The name of the token.
      * @param symbol The symbol of the token.
      * @param pairedToken_ The address of the paired token for liquidity.
+     * @param author_ The address of the paired token for liquidity.
      */
     function initialize(
         string memory name,
         string memory symbol,
-        address pairedToken_
+        address pairedToken_,
+        address author_
     ) public initializer {
+        require(pairedToken_!=address(0),"pairedToken must be not 0x0");
         __ERC20_init(name, symbol);
         __Ownable_init(msg.sender);
         __ERC20Permit_init(name);
@@ -79,6 +85,7 @@ contract ERC20MEME is
         __Pausable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
+        author = author_;
     }
 
     /**
@@ -104,7 +111,9 @@ contract ERC20MEME is
             "The withdrowAmount greater than zero is required for a mint."
         );
         IERC20(pairedToken).safeTransferFrom(msg.sender, address(this), withdraw);
-        IERC20(pairedToken).safeTransfer(owner(), protocolFee);
+        uint256 authorFee = protocolFee/2;
+        IERC20(pairedToken).safeTransfer(author, authorFee);
+        IERC20(pairedToken).safeTransfer(owner(), protocolFee-authorFee);
 
         swap(pairedToken, poolAmount/2, 0);
         addLiquidity();
@@ -149,8 +158,12 @@ contract ERC20MEME is
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
         require(((amount0>0)||(amount1>0)), "Amount must be not 0");
-        IERC20(token0).safeTransfer(owner(), amount0);
-        IERC20(token1).safeTransfer(owner(), amount1);
+        uint256 authorAmount0 = amount0/2;
+        uint256 authorAmount1 = amount1/2;
+        IERC20(token0).safeTransfer(author, authorAmount0);
+        IERC20(token1).safeTransfer(author, authorAmount1);
+        IERC20(token0).safeTransfer(owner(), amount0-authorAmount0);
+        IERC20(token1).safeTransfer(owner(), amount1-authorAmount1);
     }
 
     /**

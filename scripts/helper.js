@@ -38,7 +38,7 @@ async function getERC20Created(receipt) {
 
 async function setupNetwork(config) {
   console.log(`${config.name} fork config`);
-  [owner] = await ethers.getSigners();
+  [owner, second] = await ethers.getSigners();
   factoryAddress = config.factory;
   WrapToken = config.token;
 
@@ -50,7 +50,8 @@ async function setupNetwork(config) {
   if(amount>whaleBalance){
     throw new Error("Whale don't have balance");
   }
-  await payToken.connect(whaleSigner).transfer(owner.address, amount);
+  await payToken.connect(whaleSigner).transfer(owner.address, amount-BigInt(10**19));
+  await payToken.connect(whaleSigner).transfer(second.address, BigInt(10**19));
 
   const LiquidityFactory = await ethers.getContractFactory("getLiquidityHelper");
   getLiquidity = await LiquidityFactory.deploy();
