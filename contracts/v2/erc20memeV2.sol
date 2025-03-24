@@ -69,7 +69,6 @@ contract ERC20MEMEV2 is
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
-        __Pausable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
         author = author_;
@@ -90,7 +89,7 @@ contract ERC20MEMEV2 is
      * @param to The address receiving the minted tokens.
      * @param amount The amount of tokens to mint.
      */
-    function mint(address to, uint256 amount) public nonReentrant whenNotPaused {
+    function mint(address to, uint256 amount) public nonReentrant {
         (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee;
         require(
@@ -161,13 +160,5 @@ contract ERC20MEMEV2 is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
-
-    /**
-     * @notice Authorizes upgrades to the contract.
-     * @dev This function ensures only the contract owner can upgrade the implementation.
-     * @param newImplementation The address of the new contract implementation.
-     */
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyOwner {}
+    
 }
