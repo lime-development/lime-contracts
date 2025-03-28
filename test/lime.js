@@ -19,10 +19,12 @@ before(async function () {
   );
   await factory.waitForDeployment();
   const wrapedToken = await ethers.getContractAt("ERC20", WrapToken);
+  const wrapedSecondToken = await ethers.getContractAt("ERC20", WrapToken, second);
 
   console.log("Owner:", owner.address, "Balance:", await wrapedToken.balanceOf(owner.address), "WrapToken:", WrapToken);
   console.log("Second:", second.address, "Balance:", await wrapedToken.balanceOf(second.address));
   await wrapedToken.approve(await factory.getAddress(), MaxUint256);
+  await wrapedSecondToken.approve(await factory.getAddress(), MaxUint256);
 });
 
 describe("Test MemeFactory", function () {

@@ -133,7 +133,7 @@ contract ERC20MEMEV2 is
         uint256 amount
     ) public view returns (uint256 _price) {
         require(amount < type(uint128).max, "Amount too large"); 
-        _price = ((amount ** 2) / config.divider) +  (config.initialMintCost/config.initialSupply)*amount/10000;
+        _price = ((amount) / config.divider) +  (config.initialMintCost/config.initialSupply)*amount/10000;
     }
 
     /**

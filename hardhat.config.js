@@ -8,7 +8,7 @@ const network = process.env.NETWORK || "sepolia";
 const FORK_CONFIGS = {
   sepolia: {
     url: "https://sepolia.drpc.org", 
-    blockNumber: 7807110, 
+    blockNumber: 7992600, 
   },
   ethereum: {
     url: "https://eth.drpc.org", 
@@ -16,7 +16,7 @@ const FORK_CONFIGS = {
   },
   base: {
     url: "https://mainnet.base.org", 
-    blockNumber: 27687980, 
+    blockNumber: 28181970, 
   },
   bnb: {
     url: `https://bnb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,

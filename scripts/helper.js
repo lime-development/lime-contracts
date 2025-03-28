@@ -45,13 +45,13 @@ async function setupNetwork(config) {
   const payToken = await ethers.getContractAt("ERC20", config.token);
   await ethers.provider.send("hardhat_impersonateAccount", [config.whale]);
   const whaleSigner = await ethers.getSigner(config.whale);
-  const amount = ethers.parseUnits("450", 18);
   const whaleBalance =  await payToken.balanceOf(config.whale);
-  if(amount>whaleBalance){
+  console.log(whaleBalance);
+  if((config.requestedOwnerTokenAmounts+config.requestedAuthorTokenAmounts)>whaleBalance){
     throw new Error("Whale don't have balance");
   }
-  await payToken.connect(whaleSigner).transfer(owner.address, amount-BigInt(10**19));
-  await payToken.connect(whaleSigner).transfer(second.address, BigInt(10**19));
+  await payToken.connect(whaleSigner).transfer(owner.address, config.requestedOwnerTokenAmounts);
+  await payToken.connect(whaleSigner).transfer(second.address, config.requestedAuthorTokenAmounts);
 
   const LiquidityFactory = await ethers.getContractFactory("getLiquidityHelper");
   getLiquidity = await LiquidityFactory.deploy();
