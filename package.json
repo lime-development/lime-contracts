@@ -9,9 +9,9 @@
   "author": "VorobevSA",
   "license": "MIT License (Non-Commercial Use Only)",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.0",
-    "ethers": "^6.10.0"
+    "ethers": "^6.13.0"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
