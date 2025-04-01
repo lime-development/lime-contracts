@@ -121,6 +121,7 @@ contract MemeFactory is
     /// @param symbol Symbol of the token
     /// @param tokenPair Address of the paired token (token with which a pool is created)
     /// @return Address of the newly created ERC20 token proxy
+    /// @dev The token is created by the author, so in this method only the platform receives a commission. 
     function createERC20(
         string memory name,
         string memory symbol,

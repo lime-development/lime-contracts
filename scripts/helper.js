@@ -62,6 +62,7 @@ async function setupNetwork(config) {
     getLiquidity: await getLiquidity.getAddress(),
     initialSupply: config.initialSupply,
     protocolFee: config.protocolFee,
+    authorFee: config.authorFee,
     initialMintCost: config.initialMintCost,
     divider: config.divider,
     pool: poolConfig

@@ -104,16 +104,15 @@ contract ERC20MEME is
      * @param amount The amount of tokens to mint.
      */
     function mint(address to, uint256 amount) public nonReentrant whenNotPaused {
-        (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
+        (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee;
         require(
             withdraw > 0,
             "The withdrowAmount greater than zero is required for a mint."
         );
         IERC20(pairedToken).safeTransferFrom(msg.sender, address(this), withdraw);
-        uint256 authorFee = protocolFee/2;
         IERC20(pairedToken).safeTransfer(author, authorFee);
-        IERC20(pairedToken).safeTransfer(owner(), protocolFee-authorFee);
+        IERC20(pairedToken).safeTransfer(owner(), protocolFee);
 
         swap(pairedToken, poolAmount/2, 0);
         addLiquidity();
@@ -130,11 +129,12 @@ contract ERC20MEME is
      */
     function calculatePrice(
         uint256 amount
-    ) public view returns (uint256 poolAmount, uint256 protocolFee) {
+    ) public view returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) {
         require(amount > 0, "Amount must be greater than zero.");
         poolAmount =
             calculateValue(totalSupply() + amount) - calculateValue(totalSupply());
         protocolFee = (poolAmount * config.protocolFee) / 100000;
+        authorFee = (poolAmount * config.authorFee) / 100000;
     }
 
     /**
@@ -158,8 +158,8 @@ contract ERC20MEME is
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
         require(((amount0>0)||(amount1>0)), "Amount must be not 0");
-        uint256 authorAmount0 = amount0/2;
-        uint256 authorAmount1 = amount1/2;
+        uint256 authorAmount0 = amount0*config.authorFee/(config.protocolFee + config.authorFee);
+        uint256 authorAmount1 = amount1*config.authorFee/(config.protocolFee + config.authorFee);
         IERC20(token0).safeTransfer(author, authorAmount0);
         IERC20(token1).safeTransfer(author, authorAmount1);
         IERC20(token0).safeTransfer(owner(), amount0-authorAmount0);
