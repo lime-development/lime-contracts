@@ -9,7 +9,7 @@ async function getTokenMetrics(newMEME, amount, tokenPrice ) {
   const decimals = BigInt(10) ** await newMEME.decimals();
   tokens = BigInt(amount) * decimals;
   const [initCost] = await newMEME.calculatePrice(decimals);
-  const [cost_, fee] = await newMEME.calculatePrice(tokens);
+  const [cost_, platformFee, authorRevenue] = await newMEME.calculatePrice(tokens);
   const [nextCost] = await newMEME.calculatePrice(tokens + decimals);
 
   const tokenPriceDiv = BigInt(10 ** 6);
@@ -17,7 +17,8 @@ async function getTokenMetrics(newMEME, amount, tokenPrice ) {
   const price = ((nextCost - cost_) * tokenPrice) / tokenPriceDiv;
   const initPrice = initCost * tokenPrice / tokenPriceDiv;
   const marketCap = price * BigInt(amount);
-  const feeUSD = (fee * tokenPrice) / tokenPriceDiv;
+  const platformFeeUSD = (platformFee * tokenPrice) / tokenPriceDiv;
+  const authorRevenueUSD = (authorRevenue * tokenPrice) / tokenPriceDiv;
   const growth = (BigInt(100) * price / initPrice - BigInt(100)) * BigInt(100);
 
   const metrics = {
@@ -25,8 +26,9 @@ async function getTokenMetrics(newMEME, amount, tokenPrice ) {
       price: (Number(price) / 1e18).toFixed(6),
       priceGrowth: (Number(growth) / 100).toFixed(2), 
       totalSupply: amount.toString(),
-      tokenSpend: (Number(fee + cost_) / 1e18).toFixed(2),
-      platformFee: (Number(feeUSD) / 1e18).toFixed(2)
+      tokenSpend: (Number(platformFeeUSD + authorRevenueUSD + cost_) / 1e18).toFixed(2),
+      authorRevenue: (Number(authorRevenueUSD) / 1e18).toFixed(2),
+      platformFee: (Number(platformFeeUSD) / 1e18).toFixed(2)
   };
   return metrics;
 }
@@ -54,12 +56,12 @@ async function main() {
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);
     
-    let markdown = `| Market Cap (USD) | Token Price (USD) | Token Price Growth (%) | Minted Token (Amount) | Total Spent (Token) | Platform Mint Fee (USD) |\r\n`;
-    markdown += `|------------------|-------------------|------------------------|-----------------------|--------------------|-------------------------|\r\n`;
+    let markdown = `| Market Cap (USD) | Token Price (USD) | Token Price Growth (%) | Minted Token (Amount) | Total Spent (Token) | Author Revenue (USD) | Platform Mint Fee (USD) |\r\n`;
+    markdown += `|------------------|-------------------|------------------------|-----------------------|--------------------|-------------------------|-------------------------|\r\n`;
     const tokenPrice = BigInt(await getTokenPrice(networks[process.env.NETWORK].token, networks[process.env.NETWORK].networkID));
-    for (let amount = BigInt(100000); amount < BigInt(10000000); amount = amount + BigInt(500000) - amount % BigInt(500000)) {
+    for (let amount = BigInt(100000); amount < BigInt(200000000); amount = BigInt(2) * amount) {
         const metrics = await getTokenMetrics(newMEME, amount, tokenPrice);
-        markdown += `| ${metrics.marketCap} | ${metrics.price} | ${metrics.priceGrowth} | ${metrics.totalSupply} | ${metrics.tokenSpend} | ${metrics.platformFee} |\r\n`;
+        markdown += `| ${metrics.marketCap} | ${metrics.price} | ${metrics.priceGrowth} | ${metrics.totalSupply} | ${metrics.tokenSpend} | ${metrics.authorRevenue} | ${metrics.platformFee} |\r\n`;
     }
     
     fs.writeFileSync(`docs/tokenomics/`+process.env.NETWORK+`.md`, markdown);
