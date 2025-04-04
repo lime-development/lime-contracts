@@ -35,7 +35,8 @@ contract MemeFactory is
 
     /// @notice Emitted when a new meme token is created
     /// @param proxy Address of the created meme token proxy
-    event ERC20Created(address proxy);
+    /// @param author Meme author address
+    event ERC20Created(address proxy, address author);
 
     /// @notice Emitted when an ERC20 token is upgraded
     /// @param proxy Address of the upgraded token proxy
@@ -154,7 +155,7 @@ contract MemeFactory is
         require(IERC20MEME(proxyAddress).pool() == address(0), "Pool already initialized");
         IERC20MEME(proxyAddress).initializePool();
 
-        emit ERC20Created(proxyAddress);
+        emit ERC20Created(proxyAddress,  msg.sender);
         return proxyAddress;
     }
 
