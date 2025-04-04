@@ -34,10 +34,12 @@ async function main() {
     getLiquidity: await liquidityHelper.getAddress(),
     initialSupply: config.initialSupply,
     protocolFee: config.protocolFee,
+    authorFee: config.authorFee,
     initialMintCost: config.initialMintCost,
     divider: config.divider,
     pool: poolConfig
   };
+
   const instance = await upgrades.deployProxy(ContractFactory, [await meme.getAddress(), factoryConfig]);
   await instance.waitForDeployment();
   console.log(`MemeFactory deployed to: ${await instance.getAddress()}`);
