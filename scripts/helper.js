@@ -2,7 +2,7 @@ const { ethers } = require("hardhat");
 const { poolConfig, networks } = require("./config");
 
 async function getERC20Created(receipt) {
-    const contractInterface = new ethers.Interface(["event ERC20Created(address tokenAddress)"]);
+    const contractInterface = new ethers.Interface(["event ERC20Created(address tokenAddress, address author)"]);
   
     for (const log of receipt.logs) {
       try {
