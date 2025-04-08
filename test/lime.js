@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { MaxUint256 } = require("ethers");
 const { ethers, upgrades } = require("hardhat");
 const { poolConfig, networks } = require("../scripts/config");
-const { getERC20Created,setupNetwork } = require("../scripts/helper");
+const { getERC20Created,setupNetwork, getWRAP} = require("../scripts/helper");
 
 let owner, config;
 
@@ -12,16 +12,18 @@ before(async function () {
   const ContractMeme = await ethers.getContractFactory("ERC20MEME");
   meme = await ContractMeme.deploy();
   await meme.waitForDeployment();
-  const config = await setupNetwork(networks[process.env.NETWORK] || networks.sepolia);
+  const networkConfig = networks[process.env.NETWORK] || networks.sepolia
+  const factoryConfig = await setupNetwork(networkConfig);
+  await getWRAP(networkConfig)
   MemeFactory = await ethers.getContractFactory("MemeFactory");
   factory = await upgrades.deployProxy(MemeFactory,
-    [await meme.getAddress(), config]
+    [await meme.getAddress(), factoryConfig]
   );
   await factory.waitForDeployment();
-  const wrapedToken = await ethers.getContractAt("ERC20", WrapToken);
-  const wrapedSecondToken = await ethers.getContractAt("ERC20", WrapToken, second);
+  const wrapedToken = await ethers.getContractAt("ERC20", networkConfig.token);
+  const wrapedSecondToken = await ethers.getContractAt("ERC20", networkConfig.token, second);
 
-  console.log("Owner:", owner.address, "Balance:", await wrapedToken.balanceOf(owner.address), "WrapToken:", WrapToken);
+  console.log("Owner:", owner.address, "Balance:", await wrapedToken.balanceOf(owner.address), "WrapToken:", networkConfig.token);
   console.log("Second:", second.address, "Balance:", await wrapedToken.balanceOf(second.address));
   await wrapedToken.approve(await factory.getAddress(), MaxUint256);
   await wrapedSecondToken.approve(await factory.getAddress(), MaxUint256);

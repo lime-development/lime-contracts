@@ -1,22 +1,19 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@openzeppelin/hardhat-upgrades");
 require("@nomicfoundation/hardhat-verify");
-require("dotenv").config(); 
+require("dotenv").config();
 
 const network = process.env.NETWORK || "sepolia";
 
 const FORK_CONFIGS = {
   sepolia: {
-    url: "https://sepolia.drpc.org", 
-    blockNumber: 7992600, 
+    url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
   },
   ethereum: {
-    url: "https://eth.drpc.org", 
-    blockNumber: 21954300, 
+    url: `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
   },
   base: {
-    url: "https://mainnet.base.org", 
-    blockNumber: 28181970, 
+    url: `https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
   },
   bnb: {
     url: `https://bnb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
@@ -42,28 +39,28 @@ module.exports = {
           optimizer: {
             enabled: true,
             runs: 1000,
-          }, 
-          "viaIR": true, 
+          },
+          "viaIR": true,
         }
       },
       {
-        version: "0.7.6",  
+        version: "0.7.6",
         settings: {
           optimizer: {
             enabled: true,
             runs: 1000,
-          }, 
+          },
         }
       }
     ],
-  },  
+  },
   networks: {
     hardhat: {
       forking: {
         url: FORK_CONFIGS[network].url,
         blockNumber: FORK_CONFIGS[network].blockNumber,
       },
-      
+
     },
     'haqq-testedge2': {
       url: `https://rpc.eth.testedge2.haqq.network`,
