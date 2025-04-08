@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { MaxUint256 } = require("ethers");
 const { ethers, upgrades, hre } = require("hardhat");
 const { poolConfig, networks } = require("../scripts/config");
-const { setupNetwork, getERC20Created, getTokenPrice } = require("../scripts/helper");
+const { setupNetwork, getERC20Created, getTokenPrice, getWRAP} = require("../scripts/helper");
 const fs = require('fs');
 
 async function getTokenMetrics(newMEME, amount, tokenPrice ) {
@@ -40,10 +40,13 @@ async function main() {
     const memeImplimentation = await ContractMeme.deploy();
     await memeImplimentation.waitForDeployment();
 
-    const config = await setupNetwork(networks[process.env.NETWORK] || networks.sepolia);
+    const networkConfig = networks[process.env.NETWORK] || networks.sepolia
+    const factoryConfig = await setupNetwork(networkConfig);
+    await getWRAP(networkConfig)
+
     MemeFactory = await ethers.getContractFactory("MemeFactory");
     factory = await upgrades.deployProxy(MemeFactory,
-        [await memeImplimentation.getAddress(), config]
+        [await memeImplimentation.getAddress(), factoryConfig]
     );
     await factory.waitForDeployment();
     
