@@ -17,15 +17,23 @@ jobs:
         with:
           node-version: 18
 
-      - name: NPM
+      - name: Install dependencies
         run: npm install
+
+      - name: Compile contracts
+        run: npx hardhat compile
+        env:
+            PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}  
 
       - name: Update docs
         run: npx hardhat docgen
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
       - name: Commit and push changes
         run: |
-          rm -r ./docs/tes
+          rm -r ./docs/contracts/test
+          rm -r ./docs/contracts/interfaces
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/
@@ -36,4 +44,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/
+          publish_dir: ./docs/contracts

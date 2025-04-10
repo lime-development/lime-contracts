@@ -35,6 +35,7 @@ module.exports = {
     outputDir: './docs/contracts/', 
     pages: 'files',
     clear: true,
+    runOnCompile: true,
     include: ['*.sol'],
     exclude: ['**/test/**'],
   },
