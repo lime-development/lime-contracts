@@ -105,7 +105,7 @@ contract ERC20MEME is
      */
     function mint(address to, uint256 amount) public nonReentrant whenNotPaused {
         (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) = calculatePrice(amount);
-        uint256 withdraw = poolAmount + protocolFee;
+        uint256 withdraw = poolAmount + protocolFee + authorFee;
         require(
             withdraw > 0,
             "The withdrowAmount greater than zero is required for a mint."
