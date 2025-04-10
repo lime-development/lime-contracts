@@ -2,6 +2,7 @@ require("@nomicfoundation/hardhat-toolbox");
 require("@openzeppelin/hardhat-upgrades");
 require("@nomicfoundation/hardhat-verify");
 require("dotenv").config();
+require("solidity-docgen");
 
 const network = process.env.NETWORK || "sepolia";
 
@@ -30,6 +31,13 @@ if (!FORK_CONFIGS[network]) {
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
+  docgen: {
+    outputDir: './docs/contracts/', 
+    pages: 'files',
+    clear: true,
+    include: ['*.sol'],
+    exclude: ['**/test/**'],
+  },
   solidity: {
     compilers: [
       {

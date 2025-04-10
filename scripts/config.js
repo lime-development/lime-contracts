@@ -9,8 +9,8 @@ const poolConfig = {
     haqq: {
       name: "haqq",
       networkID: 11235,
-      initialSupply: BigInt(10000 * 10 ** 6), 
-      initialMintCost: BigInt(100 * 10 ** 18),
+      initialSupply: BigInt(100000 * 10 ** 6), 
+      initialMintCost: BigInt(1000 * 10 ** 18),
       requestedOwnerTokenAmounts : BigInt(1500 * 10 ** 18), 
       requestedAuthorTokenAmounts : BigInt(200 * 10 ** 18), 
       initialMintCost: BigInt(100 * 10 ** 18),

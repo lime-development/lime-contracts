@@ -16,7 +16,6 @@ async function getERC20Created(receipt) {
   async function getTokenPrice(token, chain) {
     if(chain == 11155111) return 10 ** 6;
     const api = String("https://api.sushi.com/price/v1/" + chain);
-    console.log(api);
     try {
         const response = await fetch(api);
         const data = await response.json();
@@ -24,7 +23,6 @@ async function getERC20Created(receipt) {
         if (data[token]) {
             const price = data[token];
             const scaledPrice = Math.floor(price * 10**6);
-            console.log(`Price of token ${token} * 10^6:`, scaledPrice);
             return scaledPrice;
         } else {
             console.log(`Token ${token} not found in API response.`);
@@ -75,18 +73,10 @@ async function getWRAP(config) {
   const amountOwner = config.requestedOwnerTokenAmounts;
   const amountSecond = config.requestedAuthorTokenAmounts;
 
-  console.log(`Adding ${amountOwner} ETH to owner (${owner.address})`);
   await addBalance(owner.address, amountOwner);
-  console.log(`Owner balance after funding: ${await ethers.provider.getBalance(owner.address)}`);
-
-  console.log(`Adding ${amountSecond} ETH to second (${second.address})`);
   await addBalance(second.address, amountSecond);
-  console.log(`Second balance after funding: ${await ethers.provider.getBalance(second.address)}`);
 
-  console.log(`Depositing ${amountOwner} ETH to WETH contract`);
   await WETH.connect(owner).deposit({ value: amountOwner });
-
-  console.log(`Depositing ${amountSecond} ETH to WETH contract`);
   await WETH.connect(second).deposit({ value: amountSecond });
 
   const balanceOwner = await WETH.balanceOf(owner.address);
