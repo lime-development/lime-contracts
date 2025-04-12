@@ -2,7 +2,11 @@
 
 ## Config
 
+Holds configuration parameters used during token creation by the factory and subsequently the tokens themselves.
+
 ### Pool
+
+Structure containing Uniswap V3 pool parameters
 
 ```solidity
 struct Pool {
@@ -14,6 +18,8 @@ struct Pool {
 ```
 
 ### Token
+
+Token creation configuration used by the factory
 
 ```solidity
 struct Token {
