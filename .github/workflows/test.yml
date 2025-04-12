@@ -1,6 +1,14 @@
 name: Hardhat Tests
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - '**/*.sol'
+      - '**/*.js'
+  pull_request:
+    paths:
+      - '**/*.sol'
+      - '**/*.js'
 
 jobs:
   test:
@@ -21,35 +29,34 @@ jobs:
       - name: Compile contracts
         run: npx hardhat compile
         env:
-            PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
       - name: Run tests on fork sepolia
         run: NETWORK=sepolia npx hardhat test
         env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}            
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
       
       - name: Run tests on fork base
         run: NETWORK=base npx hardhat test
         env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
       
       - name: Run tests on fork bnb
         run: NETWORK=bnb npx hardhat test
         env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
       
       - name: Run tests on fork ethereum
         run: NETWORK=ethereum npx hardhat test
         env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}       
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}       
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
 
       - name: Run test on fork haqq 
         run: NETWORK=haqq npx hardhat test
         env:
-            PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-            ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
-            
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
