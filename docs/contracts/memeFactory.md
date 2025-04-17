@@ -116,13 +116,22 @@ struct Config.Token config
 
 Congig for meme tokens
 
+### constructor
+
+```solidity
+constructor() public
+```
+
+This contract should be deployed via a proxy using OpenZeppelin's upgradeable mechanism.
+
 ### initialize
 
 ```solidity
 function initialize(address initialImplementation_, struct Config.Token config_) public
 ```
 
-Initializes the Factory with initial configuration for ERC20
+Initializes the Factory with initial configuration for ERC20.
+Called once during proxy deployment by OpenZeppelin Upgrades plugin. DO NOT call directly.
 
 #### Parameters
 
