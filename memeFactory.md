@@ -122,8 +122,7 @@ Congig for meme tokens
 constructor() public
 ```
 
-Empty constructor.
-This contract is designed to be deployed only with a proxy via OpenZeppelin Upgrades plugin
+This contract should be deployed via a proxy using OpenZeppelin's upgradeable mechanism.
 
 ### initialize
 
