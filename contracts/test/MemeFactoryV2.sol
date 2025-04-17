@@ -61,11 +61,20 @@ contract MemeFactoryV2 is
 
     /// @notice Congig for meme tokens
     Config.Token public config;
+  
+    // @dev Constructor disables initializers to prevent direct deployment.
+    /// This contract should be deployed via a proxy using OpenZeppelin's upgradeable mechanism.
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
 
     /**
      * @notice Initializes the Factory with initial configuration for ERC20
      * @param initialImplementation_ Address of the initial implementation contract
      * @param config_ Factory and meme token configuration
+     * @notice Called once during proxy deployment by OpenZeppelin Upgrades plugin. DO NOT call directly.
      */
     function initialize(
         address initialImplementation_,
