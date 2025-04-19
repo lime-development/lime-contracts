@@ -67,22 +67,19 @@ async function addBalance(address, amount) {
 }
 
 async function getWRAP(config) {
-  const [owner, second] = await ethers.getSigners();
+  const [owner, second, third] = await ethers.getSigners();
   const WETH = await ethers.getContractAt("IWETH9", config.token);
  
   const amountOwner = config.requestedOwnerTokenAmounts;
-  const amountSecond = config.requestedAuthorTokenAmounts;
+  const amountOthers = config.requestedAuthorTokenAmounts;
 
   await addBalance(owner.address, amountOwner);
-  await addBalance(second.address, amountSecond);
+  await addBalance(second.address, amountOthers);
+  await addBalance(third.address, amountOthers);
 
   await WETH.connect(owner).deposit({ value: amountOwner });
-  await WETH.connect(second).deposit({ value: amountSecond });
-
-  const balanceOwner = await WETH.balanceOf(owner.address);
-  const balanceSecond = await WETH.balanceOf(second.address);
-  console.log(`Final Owner's WETH balance: ${balanceOwner}`);
-  console.log(`Final Second's WETH balance: ${balanceSecond}`);
+  await WETH.connect(second).deposit({ value: amountOthers });
+  await WETH.connect(third).deposit({ value: amountOthers });
 }
 
 module.exports = { setupNetwork, getERC20Created, getTokenPrice, getWRAP};  

@@ -33,32 +33,8 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
-      - name: Run tokenomics script for haqq
-        run: NETWORK=haqq npx hardhat run scripts/tokenomics.js
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
-
       - name: Run tokenomics script for ethereum
         run: NETWORK=ethereum npx hardhat run scripts/tokenomics.js
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
-
-      - name: Run tokenomics script for sepolia
-        run: NETWORK=sepolia npx hardhat run scripts/tokenomics.js
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
-
-      - name: Run tokenomics script for bnb
-        run: NETWORK=bnb npx hardhat run scripts/tokenomics.js
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}    
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}    
-
-      - name: Run tokenomics script for base
-        run: NETWORK=base npx hardhat run scripts/tokenomics.js
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
