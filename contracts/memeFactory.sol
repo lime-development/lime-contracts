@@ -211,7 +211,7 @@ contract MemeFactory is
     
     /// @notice Collects pool fees from meme token
     /// @param meme Address of the meme token
-    function collectPoolFees(address meme) external onlyOwner {
+    function collectPoolFees(address meme) external {
        IERC20MEME(meme).collectPoolFees();
        emit CollectedPoolFees(meme);
     }
