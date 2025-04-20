@@ -241,7 +241,7 @@ async function main() {
         metrics = await getPoolMetrics();
         totalSupply = Decimal.div(Decimal(await meme.totalSupply()), decimal0);
         newString = `| ${metrics.memePrice.mul(totalSupply).toFixed(2)}` +
-            `| ${metrics.memePrice.toFixed(2)}` +    
+            `| ${metrics.memePrice.toFixed(8)}` +    
             `| ${metrics.tvl.toFixed(2)}` +
             `| ${authorFeeBalance.toFixed(2)}` +
             `| ${platformFeeBalance.toFixed(2)}` +
