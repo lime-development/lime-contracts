@@ -52,6 +52,7 @@ async function setupNetwork(config) {
     authorFee: config.authorFee,
     initialMintCost: config.initialMintCost,
     divider: config.divider,
+    pairedToken: config.token,
     pool: poolConfig
   };
   return factoryConfig

@@ -19,6 +19,7 @@ contract Config {
     /// @notice Token creation configuration used by the factory
     struct Token {
         address factory;            // Address of the Factory contract responsible for token deployment
+        address pairedToken;        // Token with which pools will be created on this network.
         address getLiquidity;       // Address of the liquidity management contract
         uint256 initialSupply;      // Total supply minted when the token is first created
         uint256 initialMintCost;    // Cost to mint or launch the token (denominated in base currency)

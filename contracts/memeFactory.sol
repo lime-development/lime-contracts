@@ -128,13 +128,11 @@ contract MemeFactory is
     /// and provide initial liquidity to pool
     /// @param name Name of the token
     /// @param symbol Symbol of the token
-    /// @param tokenPair Address of the paired token (token with which a pool is created)
     /// @return Address of the newly created ERC20 token proxy
     /// @dev The token is created by the author, so in this method only the platform receives a commission. 
     function createERC20(
         string memory name,
-        string memory symbol,
-        address tokenPair
+        string memory symbol
     ) public whenNotPaused nonReentrant returns (address) {
         ERC1967Proxy proxy = new ERC1967Proxy(
             implementation,
@@ -142,7 +140,7 @@ contract MemeFactory is
                 "initialize(string,string,address,address)",
                 name,
                 symbol,
-                tokenPair,
+                config.pairedToken,
                 msg.sender
             )
         );
@@ -151,12 +149,12 @@ contract MemeFactory is
         uint256 toPool = config.initialMintCost;
         uint256 protocolFee = (toPool * config.protocolFee) / 100000;
         require(
-            IERC20(tokenPair).allowance(msg.sender, address(this)) >= (toPool + protocolFee),
+            IERC20(config.pairedToken).allowance(msg.sender, address(this)) >= (toPool + protocolFee),
             "Insufficient allowance"
         );
 
-        IERC20(tokenPair).safeTransferFrom(msg.sender, address(this), protocolFee);
-        IERC20(tokenPair).safeTransferFrom(msg.sender, proxyAddress, toPool);
+        IERC20(config.pairedToken).safeTransferFrom(msg.sender, address(this), protocolFee);
+        IERC20(config.pairedToken).safeTransferFrom(msg.sender, proxyAddress, toPool);
 
         memeListArray.push(proxyAddress);
 

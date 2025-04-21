@@ -35,7 +35,7 @@ describe("Test MemeFactory", function () {
   });
 
   it("Create Meme", async function () {
-    const tx = await factory.createERC20("Test", "Test", WrapToken);
+    const tx = await factory.createERC20("Test", "Test");
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);
@@ -49,7 +49,7 @@ describe("Test MemeFactory", function () {
     const [_, author] = await ethers.getSigners();
 
     const authorFactory = await ethers.getContractAt("MemeFactory", await factory.getAddress(), author);
-    const tx = await authorFactory.createERC20("Test", "Test", WrapToken);
+    const tx = await authorFactory.createERC20("Test", "Test");
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);
@@ -86,7 +86,7 @@ describe("Test MemeFactory", function () {
     const meme_v2 = await ContractMemeV2.deploy();
     await meme_v2.waitForDeployment();
 
-    const tx = await factory.createERC20("Test1", "Test1", WrapToken);
+    const tx = await factory.createERC20("Test1", "Test1");
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const mem_v1 = await ethers.getContractAt("ERC20MEME", meme);

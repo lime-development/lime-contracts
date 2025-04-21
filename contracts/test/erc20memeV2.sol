@@ -19,6 +19,21 @@ import {Config} from "../config.sol";
 import {igetLiquidity} from "../interfaces/igetLiqudity.sol";
 import {ERC20PoolV3} from "../ERC20PoolV3.sol";
 
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+
+
+/**
+ * @title ERC20MEME
+ * @dev An upgradeable ERC20 token with minting, liquidity management, and protocol fee collection.
+ * This contract extends multiple OpenZeppelin upgradeable modules and integrates Uniswap V3 liquidity management.
+ * 
+ * Features:
+ * - UUPS (Universal Upgradeable Proxy Standard) upgradeability.
+ * - Ownable functionality with restricted access control.
+ * - Reentrancy protection for secure token minting.
+ * - Liquidity pool interaction via ERC20PoolV3.
+ * - Uses `SafeERC20` for safe token transfers.
+ */
 contract ERC20MEMEV2 is
     Initializable,
     ERC20Upgradeable,
@@ -26,7 +41,8 @@ contract ERC20MEMEV2 is
     ERC20PermitUpgradeable,
     UUPSUpgradeable,
     ERC20PoolV3,
-    ReentrancyGuardUpgradeable 
+    ReentrancyGuardUpgradeable,
+    PausableUpgradeable  
 {
     using SafeERC20 for IERC20;
 
@@ -69,6 +85,7 @@ contract ERC20MEMEV2 is
         __ERC20Permit_init(name);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+        __Pausable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
         author = author_;
@@ -89,17 +106,17 @@ contract ERC20MEMEV2 is
      * @param to The address receiving the minted tokens.
      * @param amount The amount of tokens to mint.
      */
-    function mint(address to, uint256 amount) public nonReentrant {
-        (uint256 poolAmount, uint256 protocolFee) = calculatePrice(amount);
-        uint256 withdraw = poolAmount + protocolFee;
+    function mint(address to, uint256 amount) public nonReentrant whenNotPaused {
+        (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) = calculatePrice(amount);
+        uint256 withdraw = poolAmount + protocolFee + authorFee;
         require(
             withdraw > 0,
             "The withdrowAmount greater than zero is required for a mint."
         );
         IERC20(pairedToken).safeTransferFrom(msg.sender, address(this), withdraw);
-        uint256 authorFee = protocolFee/2;
         IERC20(pairedToken).safeTransfer(author, authorFee);
         IERC20(pairedToken).safeTransfer(owner(), protocolFee-authorFee);
+        IERC20(pairedToken).safeTransfer(owner(), protocolFee);
 
         swap(pairedToken, poolAmount/2, 0);
         addLiquidity();
@@ -116,11 +133,12 @@ contract ERC20MEMEV2 is
      */
     function calculatePrice(
         uint256 amount
-    ) public view returns (uint256 poolAmount, uint256 protocolFee) {
+    ) public view returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) {
         require(amount > 0, "Amount must be greater than zero.");
         poolAmount =
             calculateValue(totalSupply() + amount) - calculateValue(totalSupply());
         protocolFee = (poolAmount * config.protocolFee) / 100000;
+        authorFee = (poolAmount * config.authorFee) / 100000;
     }
 
     /**
@@ -144,8 +162,8 @@ contract ERC20MEMEV2 is
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
         require(((amount0>0)||(amount1>0)), "Amount must be not 0");
-        uint256 authorAmount0 = amount0/2;
-        uint256 authorAmount1 = amount1/2;
+        uint256 authorAmount0 = amount0*config.authorFee/(config.protocolFee + config.authorFee);
+        uint256 authorAmount1 = amount1*config.authorFee/(config.protocolFee + config.authorFee);
         IERC20(token0).safeTransfer(author, authorAmount0);
         IERC20(token1).safeTransfer(author, authorAmount1);
         IERC20(token0).safeTransfer(owner(), amount0-authorAmount0);
@@ -160,5 +178,18 @@ contract ERC20MEMEV2 is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyOwner {}
-    
+
+    /**
+     * @notice Pause mint from factory
+     */
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Unpause mint from factory
+     */
+    function unpause() public onlyOwner {
+        _unpause();
+    }
 }
