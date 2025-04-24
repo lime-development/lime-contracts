@@ -185,11 +185,19 @@ async function main() {
     console.log("Token price USD", price.toFixed(4));
 
     console.log("=========Create meme token============");
+    const initWrapBalance = await wrapedToken.balanceOf(author.address);
+    const initGasBalance = BigInt(await ethers.provider.getBalance(author.address));
     await wrapedToken.connect(author).approve(await factory.getAddress(), MaxUint256);
     const tx = await factory.connect(author).createERC20("Test", "Test", WrapToken);
     const receipt = await tx.wait();
     const memeContract = await getERC20Created(receipt);
     meme = await ethers.getContractAt("ERC20MEME", memeContract);
+    //Approve for mint
+    await wrapedToken.approve(await meme.getAddress(), MaxUint256);
+
+    const wrapCost = Decimal(initWrapBalance - await wrapedToken.balanceOf(author.address)).div(Decimal(10n**18n)).mul(price);
+    const gasCost = Decimal(initGasBalance - BigInt(await ethers.provider.getBalance(author.address))).div(Decimal(10n**18n)).mul(price);
+    console.log("Create meme cost (USD) - Total:", wrapCost.add(gasCost).toFixed(2), "to Pool:", wrapCost.toFixed(2), "GasFee:", gasCost.toFixed(2));
 
     console.log("=========Uniswap v3 Config============");
     router = await ethers.getContractAt(IUniswapV3SwapRouter.abi, networkConfig.swapRouter);
