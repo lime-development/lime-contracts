@@ -1,0 +1,6 @@
+{
+    "fee": 3000,
+    "tickSpacing": 60,
+    "minTick": -887272,
+    "maxTick": 887272
+}
