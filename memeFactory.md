@@ -202,7 +202,7 @@ Withdraws protocol fees to the owner
 ### createERC20
 
 ```solidity
-function createERC20(string name, string symbol, address tokenPair) public returns (address)
+function createERC20(string name, string symbol) public returns (address)
 ```
 
 Creates a new ERC20 token (meme), create liquidity pool for meme
@@ -216,7 +216,6 @@ _The token is created by the author, so in this method only the platform receive
 | ---- | ---- | ----------- |
 | name | string | Name of the token |
 | symbol | string | Symbol of the token |
-| tokenPair | address | Address of the paired token (token with which a pool is created) |
 
 #### Return Values
 
