@@ -46,6 +46,9 @@ contract ERC20MEME is
     /// @notice Token author 
     address author;
 
+    /// @notice Total minted tokens
+    uint256 totalMinted;
+
     /// @notice Emitted when new tokens are minted.
     /// @param to Recipient of the minted tokens.
     /// @param amount Number of tokens minted.
@@ -90,6 +93,7 @@ contract ERC20MEME is
         __Pausable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
+        totalMinted = config.initialSupply;
         author = author_;
     }
 
@@ -123,6 +127,8 @@ contract ERC20MEME is
         addLiquidity();
         _mint(to, amount);
 
+        totalMinted += amount;
+
         emit Mint(to, amount, poolAmount, protocolFee);
     }
 
@@ -148,7 +154,7 @@ contract ERC20MEME is
     ) public view returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) {
         require(amount > 0, "Amount must be greater than zero.");
         poolAmount =
-            calculateValue(totalSupply() + amount) - calculateValue(totalSupply());
+            calculateValue(totalMinted + amount) - calculateValue(totalMinted);
         protocolFee = (poolAmount * config.protocolFee) / 100000;
         authorFee = (poolAmount * config.authorFee) / 100000;
     }
