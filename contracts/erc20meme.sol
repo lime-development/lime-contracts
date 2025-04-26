@@ -46,12 +46,20 @@ contract ERC20MEME is
     /// @notice Token author 
     address author;
 
+    /// @notice Total minted tokens
+    uint256 totalMinted;
+
     /// @notice Emitted when new tokens are minted.
     /// @param to Recipient of the minted tokens.
     /// @param amount Number of tokens minted.
     /// @param poolAmount Amount allocated to the liquidity pool.
     /// @param protocolFee Fee collected for the protocol.
     event Mint(address indexed to, uint256 amount, uint256 poolAmount, uint256 protocolFee);
+
+    /// @notice Emitted when tokens are burned.
+    /// @param from Address from which tokens were burned.
+    /// @param amount Amount of tokens burned.
+    event Burn(address indexed from, uint256 amount);
 
     
     /// @dev Constructor disables initializers to prevent direct deployment.
@@ -85,6 +93,7 @@ contract ERC20MEME is
         __Pausable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
+        totalMinted = config.initialSupply;
         author = author_;
     }
 
@@ -118,7 +127,20 @@ contract ERC20MEME is
         addLiquidity();
         _mint(to, amount);
 
+        totalMinted += amount;
+
         emit Mint(to, amount, poolAmount, protocolFee);
+    }
+
+    /**
+     * @notice Burns a specific amount of tokens from the caller's account.
+     * @dev Reduces the total supply.
+     * @param amount The amount of tokens to burn.
+     */
+    function burn(uint256 amount) external whenNotPaused {
+        require(amount > 0, "Amount must be greater than zero.");
+        _burn(msg.sender, amount);
+        emit Burn(msg.sender, amount);
     }
 
     /**
@@ -132,7 +154,7 @@ contract ERC20MEME is
     ) public view returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) {
         require(amount > 0, "Amount must be greater than zero.");
         poolAmount =
-            calculateValue(totalSupply() + amount) - calculateValue(totalSupply());
+            calculateValue(totalMinted + amount) - calculateValue(totalMinted);
         protocolFee = (poolAmount * config.protocolFee) / 100000;
         authorFee = (poolAmount * config.authorFee) / 100000;
     }
