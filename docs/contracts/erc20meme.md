@@ -20,6 +20,14 @@ address author
 
 Token author
 
+### totalMinted
+
+```solidity
+uint256 totalMinted
+```
+
+Total minted tokens
+
 ### Mint
 
 ```solidity
@@ -36,6 +44,21 @@ Emitted when new tokens are minted.
 | amount | uint256 | Number of tokens minted. |
 | poolAmount | uint256 | Amount allocated to the liquidity pool. |
 | protocolFee | uint256 | Fee collected for the protocol. |
+
+### Burn
+
+```solidity
+event Burn(address from, uint256 amount)
+```
+
+Emitted when tokens are burned.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| from | address | Address from which tokens were burned. |
+| amount | uint256 | Amount of tokens burned. |
 
 ### constructor
 
@@ -97,6 +120,22 @@ _Requires non-zero amounts and applies protocol fees._
 | ---- | ---- | ----------- |
 | to | address | The address receiving the minted tokens. |
 | amount | uint256 | The amount of tokens to mint. |
+
+### burn
+
+```solidity
+function burn(uint256 amount) external
+```
+
+Burns a specific amount of tokens from the caller's account.
+
+_Reduces the total supply._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| amount | uint256 | The amount of tokens to burn. |
 
 ### calculatePrice
 
