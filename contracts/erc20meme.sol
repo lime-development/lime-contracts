@@ -53,6 +53,11 @@ contract ERC20MEME is
     /// @param protocolFee Fee collected for the protocol.
     event Mint(address indexed to, uint256 amount, uint256 poolAmount, uint256 protocolFee);
 
+    /// @notice Emitted when tokens are burned.
+    /// @param from Address from which tokens were burned.
+    /// @param amount Amount of tokens burned.
+    event Burn(address indexed from, uint256 amount);
+
     
     /// @dev Constructor disables initializers to prevent direct deployment.
     /// This contract should be deployed via a proxy using OpenZeppelin's upgradeable mechanism.
@@ -119,6 +124,17 @@ contract ERC20MEME is
         _mint(to, amount);
 
         emit Mint(to, amount, poolAmount, protocolFee);
+    }
+
+    /**
+     * @notice Burns a specific amount of tokens from the caller's account.
+     * @dev Reduces the total supply.
+     * @param amount The amount of tokens to burn.
+     */
+    function burn(uint256 amount) external whenNotPaused {
+        require(amount > 0, "Amount must be greater than zero.");
+        _burn(msg.sender, amount);
+        emit Burn(msg.sender, amount);
     }
 
     /**
