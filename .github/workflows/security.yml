@@ -1,5 +1,14 @@
 name: Slither Analysis
-on: [push]
+
+on:
+  push:
+    paths:
+      - '**/*.sol'
+      - '**/*.js'
+  pull_request:
+    paths:
+      - '**/*.sol'
+      - '**/*.js'
 
 permissions:
   contents: read
@@ -21,8 +30,26 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY_TEST }} 
 
-#  ToDo After public      
-#      - name: Upload SARIF file
-#        uses: github/codeql-action/upload-sarif@v3
-#        with:
-#          sarif_file: ${{ steps.slither.outputs.sarif }}
+      - name: Set status to GitHub Checks (Success)
+        if: ${{ success() }}
+        run: |
+          curl -X POST \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -d '{"state": "success", "context": "Slither Analysis", "description": "Slither analysis passed successfully!"}' \
+          "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}"
+
+      - name: Set status to GitHub Checks (Failure)
+        if: ${{ failure() }}
+        run: |
+          curl -X POST \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -d '{"state": "failure", "context": "Slither Analysis", "description": "Slither analysis failed. Please check the logs!"}' \
+          "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}"
+
+      - name: Upload SARIF file (only on main branch push or PR targeting main)
+        if: |
+          github.event_name == 'push' && github.ref == 'refs/heads/main' ||
+          github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.slither.outputs.sarif }}
