@@ -63,15 +63,28 @@ jobs:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
 
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ""
+
       - name: Commit and push changes
         run: |
-          rm -r ./docs/contracts/test
-          rm -r ./docs/contracts/interfaces
+          rm -r ./docs/contracts/test || true
+          rm -r ./docs/contracts/interfaces || true
+        
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global commit.gpgsign true
+          git config --global user.signingkey $(gpg --list-secret-keys --with-colons | grep '^sec' | cut -d':' -f5)
+        
           git add docs/
-          git commit -m "Update docs [auto]" || echo "No changes to commit"
-          git push
+        
+          git diff --cached --quiet || git commit -S -m "Update docs [auto]"
+        
+          git pull --rebase
+          git push --follow-tags
 
       - name: Deploy on GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
