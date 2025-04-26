@@ -24,6 +24,7 @@ Token creation configuration used by the factory
 ```solidity
 struct Token {
   address factory;
+  address pairedToken;
   address getLiquidity;
   uint256 initialSupply;
   uint256 initialMintCost;
