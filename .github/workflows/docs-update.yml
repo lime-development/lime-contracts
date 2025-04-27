@@ -1,4 +1,4 @@
-name: Deploy Docs
+name: Update Docs
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - '**/*.js'
 
 jobs:
-  build-and-deploy:
+  update-and-pull-request:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
