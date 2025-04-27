@@ -46,15 +46,28 @@ contract ERC20MEMEV2 is
 {
     using SafeERC20 for IERC20;
 
-    /// @notice Token author 
+    /// @notice Token author
     address author;
+
+    /// @notice Total minted tokens
+    uint256 totalMinted;
 
     /// @notice Emitted when new tokens are minted.
     /// @param to Recipient of the minted tokens.
     /// @param amount Number of tokens minted.
     /// @param poolAmount Amount allocated to the liquidity pool.
     /// @param protocolFee Fee collected for the protocol.
-    event Mint(address indexed to, uint256 amount, uint256 poolAmount, uint256 protocolFee);
+    event Mint(
+        address indexed to,
+        uint256 amount,
+        uint256 poolAmount,
+        uint256 protocolFee
+    );
+
+    /// @notice Emitted when tokens are burned.
+    /// @param from Address from which tokens were burned.
+    /// @param amount Amount of tokens burned.
+    event Burn(address indexed from, uint256 amount);
 
     
     /// @dev Constructor disables initializers to prevent direct deployment.
@@ -79,7 +92,7 @@ contract ERC20MEMEV2 is
         address pairedToken_,
         address author_
     ) public initializer {
-        require(pairedToken_!=address(0),"pairedToken must be not 0x0");
+        require(pairedToken_ != address(0), "pairedToken must be not 0x0");
         __ERC20_init(name, symbol);
         __Ownable_init(msg.sender);
         __ERC20Permit_init(name);
@@ -88,6 +101,7 @@ contract ERC20MEMEV2 is
         __Pausable_init();
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
+        totalMinted = config.initialSupply;
         author = author_;
     }
 
@@ -98,7 +112,7 @@ contract ERC20MEMEV2 is
     function decimals() public view virtual override returns (uint8) {
         return 6;
     }
- 
+
     /**
      * @notice Mints new tokens and manages liquidity allocation.
      * The funds received for the mint go into the token's liquidity pool.
@@ -106,23 +120,49 @@ contract ERC20MEMEV2 is
      * @param to The address receiving the minted tokens.
      * @param amount The amount of tokens to mint.
      */
-    function mint(address to, uint256 amount) public nonReentrant whenNotPaused {
-        (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) = calculatePrice(amount);
+    function mint(
+        address to,
+        uint256 amount
+    ) public nonReentrant whenNotPaused {
+        (
+            uint256 poolAmount,
+            uint256 protocolFee,
+            uint256 authorFee
+        ) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee + authorFee;
+
         require(
             withdraw > 0,
-            "The withdrowAmount greater than zero is required for a mint."
+            "The withdrawAmount greater than zero is required for a mint."
         );
-        IERC20(pairedToken).safeTransferFrom(msg.sender, address(this), withdraw);
+
+        IERC20(pairedToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            withdraw
+        );
+
+        _mint(to, amount);
+        totalMinted += amount;
+
         IERC20(pairedToken).safeTransfer(author, authorFee);
-        IERC20(pairedToken).safeTransfer(owner(), protocolFee-authorFee);
         IERC20(pairedToken).safeTransfer(owner(), protocolFee);
 
-        swap(pairedToken, poolAmount/2, 0);
+        swap(pairedToken, poolAmount / 2, 0);
         addLiquidity();
-        _mint(to, amount);
 
         emit Mint(to, amount, poolAmount, protocolFee);
+    }
+
+    /**
+     * @notice Burns a specific amount of tokens from the caller's account.
+     * @dev Reduces the total supply.
+     * @param amount The amount of tokens to burn.
+     */
+    function burn(uint256 amount) external whenNotPaused {
+        require(amount > 0, "Amount must be greater than zero.");
+        _burn(msg.sender, amount);
+        emit Burn(msg.sender, amount);
     }
 
     /**
@@ -133,10 +173,15 @@ contract ERC20MEMEV2 is
      */
     function calculatePrice(
         uint256 amount
-    ) public view returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) {
+    )
+        public
+        view
+        returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee)
+    {
         require(amount > 0, "Amount must be greater than zero.");
         poolAmount =
-            calculateValue(totalSupply() + amount) - calculateValue(totalSupply());
+            calculateValue(totalMinted + amount) -
+            calculateValue(totalMinted);
         protocolFee = (poolAmount * config.protocolFee) / 100000;
         authorFee = (poolAmount * config.authorFee) / 100000;
     }
@@ -146,8 +191,8 @@ contract ERC20MEMEV2 is
      * @dev Uses the formula: factorial X = 1/2 * X^2 / divider`.
      * @param amount The token amount to calculate its value.
      * @return _price The computed value based on liquidity mechanics.
-     */ 
-    function calculateValue (
+     */
+    function calculateValue(
         uint256 amount
     ) public view returns (uint256 _price) {
         require(amount < type(uint128).max, "Amount too large"); 
@@ -158,16 +203,18 @@ contract ERC20MEMEV2 is
      * @notice Collects accumulated pool fees and transfers them to the contract owner.
      * @dev Ensures at least one token amount is greater than zero.
      */
-    function collectPoolFees() external onlyOwner {
+    function collectPoolFees() external nonReentrant onlyOwner {
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
-        require(((amount0>0)||(amount1>0)), "Amount must be not 0");
-        uint256 authorAmount0 = amount0*config.authorFee/(config.protocolFee + config.authorFee);
-        uint256 authorAmount1 = amount1*config.authorFee/(config.protocolFee + config.authorFee);
+        require(((amount0 > 0) || (amount1 > 0)), "Amount must be not 0");
+        uint256 authorAmount0 = (amount0 * config.authorFee) /
+            (config.protocolFee + config.authorFee);
+        uint256 authorAmount1 = (amount1 * config.authorFee) /
+            (config.protocolFee + config.authorFee);
         IERC20(token0).safeTransfer(author, authorAmount0);
         IERC20(token1).safeTransfer(author, authorAmount1);
-        IERC20(token0).safeTransfer(owner(), amount0-authorAmount0);
-        IERC20(token1).safeTransfer(owner(), amount1-authorAmount1);
+        IERC20(token0).safeTransfer(owner(), amount0 - authorAmount0);
+        IERC20(token1).safeTransfer(owner(), amount1 - authorAmount1);
     }
 
     /**
@@ -193,3 +240,4 @@ contract ERC20MEMEV2 is
         _unpause();
     }
 }
+

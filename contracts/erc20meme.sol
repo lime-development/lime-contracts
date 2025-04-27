@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-// 
+//
 // This software is licensed under the MIT License for non-commercial use only.
 // Commercial use requires a separate agreement with the author.
 pragma solidity ^0.8.20;
-
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -23,7 +22,7 @@ import {ERC20PoolV3} from "./ERC20PoolV3.sol";
  * @title ERC20MEME
  * @dev An upgradeable ERC20 token with minting, liquidity management, and protocol fee collection.
  * This contract extends multiple OpenZeppelin upgradeable modules and integrates Uniswap V3 liquidity management.
- * 
+ *
  * Features:
  * - UUPS (Universal Upgradeable Proxy Standard) upgradeability.
  * - Ownable functionality with restricted access control.
@@ -39,11 +38,11 @@ contract ERC20MEME is
     UUPSUpgradeable,
     ERC20PoolV3,
     ReentrancyGuardUpgradeable,
-    PausableUpgradeable  
+    PausableUpgradeable
 {
     using SafeERC20 for IERC20;
 
-    /// @notice Token author 
+    /// @notice Token author
     address author;
 
     /// @notice Total minted tokens
@@ -54,14 +53,18 @@ contract ERC20MEME is
     /// @param amount Number of tokens minted.
     /// @param poolAmount Amount allocated to the liquidity pool.
     /// @param protocolFee Fee collected for the protocol.
-    event Mint(address indexed to, uint256 amount, uint256 poolAmount, uint256 protocolFee);
+    event Mint(
+        address indexed to,
+        uint256 amount,
+        uint256 poolAmount,
+        uint256 protocolFee
+    );
 
     /// @notice Emitted when tokens are burned.
     /// @param from Address from which tokens were burned.
     /// @param amount Amount of tokens burned.
     event Burn(address indexed from, uint256 amount);
 
-    
     /// @dev Constructor disables initializers to prevent direct deployment.
     /// This contract should be deployed via a proxy using OpenZeppelin's upgradeable mechanism.
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -84,7 +87,7 @@ contract ERC20MEME is
         address pairedToken_,
         address author_
     ) public initializer {
-        require(pairedToken_!=address(0),"pairedToken must be not 0x0");
+        require(pairedToken_ != address(0), "pairedToken must be not 0x0");
         __ERC20_init(name, symbol);
         __Ownable_init(msg.sender);
         __ERC20Permit_init(name);
@@ -104,7 +107,7 @@ contract ERC20MEME is
     function decimals() public view virtual override returns (uint8) {
         return 6;
     }
- 
+
     /**
      * @notice Mints new tokens and manages liquidity allocation.
      * The funds received for the mint go into the token's liquidity pool.
@@ -112,22 +115,36 @@ contract ERC20MEME is
      * @param to The address receiving the minted tokens.
      * @param amount The amount of tokens to mint.
      */
-    function mint(address to, uint256 amount) public nonReentrant whenNotPaused {
-        (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) = calculatePrice(amount);
+    function mint(
+        address to,
+        uint256 amount
+    ) public nonReentrant whenNotPaused {
+        (
+            uint256 poolAmount,
+            uint256 protocolFee,
+            uint256 authorFee
+        ) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee + authorFee;
+
         require(
             withdraw > 0,
-            "The withdrowAmount greater than zero is required for a mint."
+            "The withdrawAmount greater than zero is required for a mint."
         );
-        IERC20(pairedToken).safeTransferFrom(msg.sender, address(this), withdraw);
+
+        IERC20(pairedToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            withdraw
+        );
+
+        _mint(to, amount);
+        totalMinted += amount;
+
         IERC20(pairedToken).safeTransfer(author, authorFee);
         IERC20(pairedToken).safeTransfer(owner(), protocolFee);
 
-        swap(pairedToken, poolAmount/2, 0);
+        swap(pairedToken, poolAmount / 2, 0);
         addLiquidity();
-        _mint(to, amount);
-
-        totalMinted += amount;
 
         emit Mint(to, amount, poolAmount, protocolFee);
     }
@@ -151,10 +168,15 @@ contract ERC20MEME is
      */
     function calculatePrice(
         uint256 amount
-    ) public view returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee) {
+    )
+        public
+        view
+        returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee)
+    {
         require(amount > 0, "Amount must be greater than zero.");
         poolAmount =
-            calculateValue(totalMinted + amount) - calculateValue(totalMinted);
+            calculateValue(totalMinted + amount) -
+            calculateValue(totalMinted);
         protocolFee = (poolAmount * config.protocolFee) / 100000;
         authorFee = (poolAmount * config.authorFee) / 100000;
     }
@@ -164,28 +186,33 @@ contract ERC20MEME is
      * @dev Uses the formula: factorial X^2 = 1/3 * X^3 / divider`.
      * @param amount The token amount to calculate its value.
      * @return _price The computed value based on liquidity mechanics.
-     */ 
-    function calculateValue (
+     */
+    function calculateValue(
         uint256 amount
     ) public view returns (uint256 _price) {
-        require(amount < type(uint128).max, "Amount too large"); 
-        _price = ((amount ** 2) / config.divider) +  (config.initialMintCost/config.initialSupply)*amount/10000;
+        require(amount < type(uint128).max, "Amount too large");
+        _price =
+            ((amount ** 2) / config.divider) +
+            ((config.initialMintCost / config.initialSupply) * amount) /
+            10000;
     }
 
     /**
      * @notice Collects accumulated pool fees and transfers them to the contract owner.
      * @dev Ensures at least one token amount is greater than zero.
      */
-    function collectPoolFees() external onlyOwner {
+    function collectPoolFees() external nonReentrant onlyOwner {
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
-        require(((amount0>0)||(amount1>0)), "Amount must be not 0");
-        uint256 authorAmount0 = amount0*config.authorFee/(config.protocolFee + config.authorFee);
-        uint256 authorAmount1 = amount1*config.authorFee/(config.protocolFee + config.authorFee);
+        require(((amount0 > 0) || (amount1 > 0)), "Amount must be not 0");
+        uint256 authorAmount0 = (amount0 * config.authorFee) /
+            (config.protocolFee + config.authorFee);
+        uint256 authorAmount1 = (amount1 * config.authorFee) /
+            (config.protocolFee + config.authorFee);
         IERC20(token0).safeTransfer(author, authorAmount0);
         IERC20(token1).safeTransfer(author, authorAmount1);
-        IERC20(token0).safeTransfer(owner(), amount0-authorAmount0);
-        IERC20(token1).safeTransfer(owner(), amount1-authorAmount1);
+        IERC20(token0).safeTransfer(owner(), amount0 - authorAmount0);
+        IERC20(token1).safeTransfer(owner(), amount1 - authorAmount1);
     }
 
     /**
