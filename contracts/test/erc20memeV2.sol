@@ -204,17 +204,22 @@ contract ERC20MEMEV2 is
      * @dev Ensures at least one token amount is greater than zero.
      */
     function collectPoolFees() external nonReentrant onlyOwner {
+        address currentOwner = owner();
+
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
+
         require(((amount0 > 0) || (amount1 > 0)), "Amount must be not 0");
+
         uint256 authorAmount0 = (amount0 * config.authorFee) /
             (config.protocolFee + config.authorFee);
         uint256 authorAmount1 = (amount1 * config.authorFee) /
             (config.protocolFee + config.authorFee);
+
         IERC20(token0).safeTransfer(author, authorAmount0);
         IERC20(token1).safeTransfer(author, authorAmount1);
-        IERC20(token0).safeTransfer(owner(), amount0 - authorAmount0);
-        IERC20(token1).safeTransfer(owner(), amount1 - authorAmount1);
+        IERC20(token0).safeTransfer(currentOwner, amount0 - authorAmount0);
+        IERC20(token1).safeTransfer(currentOwner, amount1 - authorAmount1);
     }
 
     /**
