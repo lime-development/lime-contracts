@@ -5,86 +5,14 @@ on:
     branches:
       - main
     paths:
-       - '**/*.sol'
-       - '**/*.js'
+      - 'docs/**'
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Compile contracts
-        run: npx hardhat compile
-        env:
-            PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}  
-
-      - name: Update docs
-        run: npx hardhat docgen
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-
-      - name: Run tokenomics script for haqq
-        run: NETWORK=haqq npx hardhat run scripts/tokenomics.js
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
-
-      - name: Run tokenomics script for ethereum
-        run: NETWORK=ethereum npx hardhat run scripts/tokenomics.js
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
-
-      - name: Run tokenomics script for sepolia
-        run: NETWORK=sepolia npx hardhat run scripts/tokenomics.js
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
-
-      - name: Run tokenomics script for bnb
-        run: NETWORK=bnb npx hardhat run scripts/tokenomics.js
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}    
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}    
-
-      - name: Run tokenomics script for base
-        run: NETWORK=base npx hardhat run scripts/tokenomics.js
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }} 
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }} 
-
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ""
-
-      - name: Commit and push changes
-        run: |
-          rm -r ./docs/contracts/test || true
-          rm -r ./docs/contracts/interfaces || true
-        
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global commit.gpgsign true
-          git config --global user.signingkey $(gpg --list-secret-keys --with-colons | grep '^sec' | cut -d':' -f5)
-        
-          git add docs/
-        
-          git diff --cached --quiet || git commit -S -m "Update docs [auto]"
-        
-          git pull --rebase
-          git push --follow-tags
 
       - name: Deploy on GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
