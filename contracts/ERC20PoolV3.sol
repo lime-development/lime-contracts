@@ -98,12 +98,14 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         uint256 amount1 = IERC20(token1).balanceOf(address(this));
         require(amount0 > 0 && amount1 > 0, "Both tokens must have balance");
 
-        (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
+        (uint160 sqrtPriceX96, , , , , ,bool unlocked) = IUniswapV3Pool(pool).slot0();
+        require(!unlocked, "Pool is unlocked before initialize");
+
         if (sqrtPriceX96 == 0) {
             sqrtPriceX96 = igetLiquidity(config.getLiquidity).getSqrtPriceX96(amount1, amount0);
             IUniswapV3Pool(pool).initialize(sqrtPriceX96);
-            (uint160 newSqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
-            require(newSqrtPriceX96 != 0, "Pool initialization failed");
+            (uint160 newSqrtPriceX96, , , , , , bool newUnlocked) = IUniswapV3Pool(pool).slot0();
+            require(newSqrtPriceX96 != 0 && newUnlocked, "Pool initialization failed");
         }
         emit PriceSetuped(pool, sqrtPriceX96);
     }
@@ -164,7 +166,8 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         IERC20(token0).safeIncreaseAllowance(pool, amount0);
         IERC20(token1).safeIncreaseAllowance(pool, amount1);
 
-        (uint160 sqrtPriceX96, , , , , , ) = IUniswapV3Pool(pool).slot0();
+        (uint160 sqrtPriceX96, , , , , ,bool unlocked) = IUniswapV3Pool(pool).slot0();
+        require(unlocked, "Pool is locked");
 
         uint256 liquidity = IUniswapV3Pool(pool).liquidity();
         uint128 liquidityIn = igetLiquidity(config.getLiquidity).getLiquidity(
@@ -176,7 +179,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
             config.pool.maxTick
         );
 
-        IUniswapV3Pool(pool).mint(
+        (uint256 added0, uint256 added1) = IUniswapV3Pool(pool).mint(
             address(this),
             (config.pool.minTick / config.pool.tickSpacing) * config.pool.tickSpacing,
             (config.pool.maxTick / config.pool.tickSpacing) * config.pool.tickSpacing,
@@ -185,7 +188,11 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         );
 
         require(
-            IUniswapV3Pool(pool).liquidity() > liquidity,"AddLiquidity falt"
+            (added0 > 0) && (added1>0),  "AddLiquidity failed - Added amount0 or amount1 is 0"
+        );
+
+        require(
+            IUniswapV3Pool(pool).liquidity() > liquidity, "AddLiquidity failed - liquidity didn't increase"
         );
     }
 
