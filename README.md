@@ -52,3 +52,9 @@ npx hardhat test
 NETWORK=your_network npx hardhat test
 npx hardhat run scripts/deploy.js --network your_network
 ```
+
+### Slither
+
+```
+slither .
+```
