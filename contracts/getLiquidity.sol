@@ -55,7 +55,6 @@ contract getLiquidityHelper {
      * @param amount0 Amount of token 0.
      * @param amount1 Amount of token 1.
      * @param sqrtRatioX96 Current price ratio in sqrtPriceX96 format.
-     * @param tick The tick spacing of the pool.
      * @param min The minimum tick of the liquidity range.
      * @param max The maximum tick of the liquidity range.
      * @return liquidity The calculated liquidity value.
@@ -64,12 +63,11 @@ contract getLiquidityHelper {
         uint256 amount0,
         uint256 amount1,
         uint160 sqrtRatioX96,
-        int24 tick,
         int24 min,
         int24 max
     ) external pure returns (uint128 liquidity) {
-        uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick((min / tick) * tick);
-        uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick((max / tick) * tick);
+        uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(min);
+        uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(max);
         liquidity = LiquidityAmounts.getLiquidityForAmounts(sqrtRatioX96, sqrtRatioAX96, sqrtRatioBX96, amount0, amount1);
     }
 }

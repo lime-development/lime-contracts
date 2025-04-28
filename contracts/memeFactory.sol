@@ -86,6 +86,7 @@ contract MemeFactory is
         address initialImplementation_,
         Config.Token calldata config_
     ) public initializer() {
+        require(initialImplementation_ != address(0), "Implementation must be not 0x0");
         __Ownable_init(msg.sender); 
         __Pausable_init();
         __ReentrancyGuard_init();

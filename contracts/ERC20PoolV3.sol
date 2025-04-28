@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// 
+//
 // This software is licensed under the MIT License for non-commercial use only.
 // Commercial use requires a separate agreement with the author.
 pragma solidity ^0.8.20;
@@ -39,36 +39,71 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @param amountIn The amount of input tokens swapped.
     /// @param tokenOut The address of the output token.
     /// @param amountOut The amount of output tokens received.
-    event Swapped(address tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut);
+    event Swapped(
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut,
+        uint256 amountOut
+    );
 
     /// @notice Emitted when liquidity is added to the pool.
     /// @param token0 The address of the token0 token.
     /// @param amount0 The amount of the token0 token added.
     /// @param token1 The address of the token1 token.
     /// @param amount1 The amount of the token1 token added.
-    event AddedLiquidity(address token0, uint256 amount0, address token1, uint256 amount1);
+    event AddedLiquidity(
+        address token0,
+        uint256 amount0,
+        address token1,
+        uint256 amount1
+    );
 
     /// @notice Emitted when pool fees are collected.
     /// @param amount0 The amount of the token0 token collected as fees.
     /// @param amount1 The amount of the token1 token collected as fees.
     event CollectedPoolFees(uint256 amount0, uint256 amount1);
 
-
+    /// @notice The address of the Uniswap V3 pool associated with this contract.
     address public pool;
+
+    /// @notice The address of the token paired with this contract's token in the liquidity pool.
     address public pairedToken;
+
+    /// @notice The configuration parameters used for pool and liquidity management.
     Config.Token public config;
+
+    /// @notice tickLower The lower tick of the position in which to add liquidity
+    int24 tickLower;
+    /// @notice tickUpper The upper tick of the position in which to add liquidity
+    int24 tickUpper;
 
     /// @notice Initializes the contract with the paired token and configuration.
     /// @param _pairedToken The address of the token with which the pool is to be created.
     /// @param _config The configuration structure containing pool settings.
-    function __ERC20PoolV3_init(address _pairedToken, Config.Token memory _config) internal onlyInitializing {
+    function __ERC20PoolV3_init(
+        address _pairedToken,
+        Config.Token memory _config
+    ) internal onlyInitializing {
         __Ownable_init(msg.sender);
         pairedToken = _pairedToken;
         config = _config;
+        // The lower tick for the liquidity position, rounded down to the nearest multiple of the tick spacing.
+        // The rounding is intentional 
+        // slither-disable-next-line divide-before-multiply
+        tickLower =
+            (config.pool.minTick / config.pool.tickSpacing) *
+            config.pool.tickSpacing;
+
+        // The upper tick for the liquidity position, rounded down to the nearest multiple of the tick spacing.
+        // The rounding is intentional 
+        // slither-disable-next-line divide-before-multiply
+        tickUpper =
+            (config.pool.maxTick / config.pool.tickSpacing) *
+            config.pool.tickSpacing;
     }
 
     /// @notice Creates and initializes the liquidity pool if it has not been initialized yet.
-    /// @dev The function is separated from __ERC20PoolV3_init to perform approval on the contract address after Init. 
+    /// @dev The function is separated from __ERC20PoolV3_init to perform approval on the contract address after Init.
     function initializePool() public onlyOwner {
         require(pool == address(0), "Pool already initialized");
         createPool();
@@ -81,9 +116,17 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     function createPool() internal {
         (address token0, address token1) = getTokens();
 
-        pool = IUniswapV3Factory(config.factory).getPool(token0, token1, config.pool.fee);
+        pool = IUniswapV3Factory(config.factory).getPool(
+            token0,
+            token1,
+            config.pool.fee
+        );
         if (pool == address(0)) {
-            pool = IUniswapV3Factory(config.factory).createPool(token0, token1, config.pool.fee);
+            pool = IUniswapV3Factory(config.factory).createPool(
+                token0,
+                token1,
+                config.pool.fee
+            );
             require(pool != address(0), "Pool creation failed");
         }
         emit PoolCreated(token0, token1, pool);
@@ -98,14 +141,38 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         uint256 amount1 = IERC20(token1).balanceOf(address(this));
         require(amount0 > 0 && amount1 > 0, "Both tokens must have balance");
 
-        (uint160 sqrtPriceX96, , , , , ,bool unlocked) = IUniswapV3Pool(pool).slot0();
+        // Only sqrtPriceX96 and unlocked are used here, the other parameters like 
+        // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol 
+        // are not necessary for the current logic of this function
+        // slither-disable-next-line unused-return
+        (uint160 sqrtPriceX96, , , , , , bool unlocked) = IUniswapV3Pool(pool)
+            .slot0();
         require(!unlocked, "Pool is unlocked before initialize");
 
         if (sqrtPriceX96 == 0) {
-            sqrtPriceX96 = igetLiquidity(config.getLiquidity).getSqrtPriceX96(amount1, amount0);
+            sqrtPriceX96 = igetLiquidity(config.getLiquidity).getSqrtPriceX96(
+                amount1,
+                amount0
+            );
             IUniswapV3Pool(pool).initialize(sqrtPriceX96);
-            (uint160 newSqrtPriceX96, , , , , , bool newUnlocked) = IUniswapV3Pool(pool).slot0();
-            require(newSqrtPriceX96 != 0 && newUnlocked, "Pool initialization failed");
+            
+            // Only sqrtPriceX96 and unlocked are used here, the other parameters like 
+            // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol 
+            // are not necessary for the current logic of this function
+            // slither-disable-next-line unused-return
+            (
+                uint160 newSqrtPriceX96,
+                ,
+                ,
+                ,
+                ,
+                ,
+                bool newUnlocked
+            ) = IUniswapV3Pool(pool).slot0();
+            require(
+                newSqrtPriceX96 != 0 && newUnlocked,
+                "Pool initialization failed"
+            );
         }
         emit PriceSetuped(pool, sqrtPriceX96);
     }
@@ -114,27 +181,38 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @param tokenIn The address of the token to swap from.
     /// @param amount The amount of the input token to swap.
     /// @param minAmountOut The minium amount of the out token from swap.
-    function swap(address tokenIn, uint256 amount, uint256 minAmountOut) internal returns (uint256 amountOut) {
+    function swap(
+        address tokenIn,
+        uint256 amount,
+        uint256 minAmountOut
+    ) internal returns (uint256 amountOut) {
         require(pool != address(0), "Pool must be created");
-        require(IERC20(tokenIn).balanceOf(address(this)) >= amount, "Insufficient balance for swap");
-    
+        require(
+            IERC20(tokenIn).balanceOf(address(this)) >= amount,
+            "Insufficient balance for swap"
+        );
+
         IERC20(tokenIn).safeIncreaseAllowance(pool, amount);
-    
-        address tokenOut = (tokenIn == address(this)) ? pairedToken : address(this);
-    
+
+        address tokenOut = (tokenIn == address(this))
+            ? pairedToken
+            : address(this);
+
         bool zeroForOne = tokenIn < tokenOut;
 
         uint160 MIN_SQRT_RATIO = 4295128739;
         uint160 MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
-        uint160 sqrtPriceLimitX96 = zeroForOne ? MIN_SQRT_RATIO + 1 : MAX_SQRT_RATIO - 1;
-    
+        uint160 sqrtPriceLimitX96 = zeroForOne
+            ? MIN_SQRT_RATIO + 1
+            : MAX_SQRT_RATIO - 1;
+
         (int256 amount0Delta, int256 amount1Delta) = IUniswapV3Pool(pool).swap(
             address(this),
             zeroForOne,
             int256(amount),
             sqrtPriceLimitX96,
-            abi.encode(tokenIn, amount)  
+            abi.encode(tokenIn, amount)
         );
 
         amountOut = uint256(zeroForOne ? -amount1Delta : -amount0Delta);
@@ -150,7 +228,10 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         bytes calldata data
     ) external {
         require(msg.sender == pool, "Callback must be from pool");
-        (address tokenIn, uint256 amount) = abi.decode(data, (address, uint256));
+        (address tokenIn, uint256 amount) = abi.decode(
+            data,
+            (address, uint256)
+        );
         IERC20(tokenIn).safeTransfer(msg.sender, amount);
     }
 
@@ -166,40 +247,46 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         IERC20(token0).safeIncreaseAllowance(pool, amount0);
         IERC20(token1).safeIncreaseAllowance(pool, amount1);
 
-        (uint160 sqrtPriceX96, , , , , ,bool unlocked) = IUniswapV3Pool(pool).slot0();
+        // Only sqrtPriceX96 and unlocked are used here, the other parameters like 
+        // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol 
+        // are not necessary for the current logic of this function
+        // slither-disable-next-line unused-return
+        (uint160 sqrtPriceX96, , , , , , bool unlocked) = IUniswapV3Pool(pool)
+            .slot0();
         require(unlocked, "Pool is locked");
 
         uint256 liquidity = IUniswapV3Pool(pool).liquidity();
         uint128 liquidityIn = igetLiquidity(config.getLiquidity).getLiquidity(
-            amount0, 
-            amount1, 
+            amount0,
+            amount1,
             sqrtPriceX96,
-            config.pool.tickSpacing,
-            config.pool.minTick,
-            config.pool.maxTick
+            tickLower,
+            tickUpper
         );
 
         (uint256 added0, uint256 added1) = IUniswapV3Pool(pool).mint(
             address(this),
-            (config.pool.minTick / config.pool.tickSpacing) * config.pool.tickSpacing,
-            (config.pool.maxTick / config.pool.tickSpacing) * config.pool.tickSpacing,
+            tickLower,
+            tickUpper,
             liquidityIn,
             abi.encode(token0, token1)
         );
 
         require(
-            (added0 > 0) && (added1>0),  "AddLiquidity failed - Added amount0 or amount1 is 0"
+            (added0 > 0) && (added1 > 0),
+            "AddLiquidity failed - Added amount0 or amount1 is 0"
         );
 
         require(
-            IUniswapV3Pool(pool).liquidity() > liquidity, "AddLiquidity failed - liquidity didn't increase"
+            IUniswapV3Pool(pool).liquidity() > liquidity,
+            "AddLiquidity failed - liquidity didn't increase"
         );
     }
 
-    /// @notice Callback for UniswapV3Pool mint  
+    /// @notice Callback for UniswapV3Pool mint
     /// @param amount0 The amount of token0 due to the pool for the minted liquidity
     /// @param amount1 The amount of token1 due to the pool for the minted liquidity
-    /// @param data Data passed through by the addLiquidity() via the IUniswapV3PoolActions#mint call 
+    /// @param data Data passed through by the addLiquidity() via the IUniswapV3PoolActions#mint call
     function uniswapV3MintCallback(
         uint256 amount0,
         uint256 amount1,
@@ -220,11 +307,14 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     }
 
     /// @notice Collects accumulated trading fees from the liquidity pool.
-    function _collectPoolFees() internal returns (uint256 amount0, uint256 amount1) {
+    function _collectPoolFees()
+        internal
+        returns (uint256 amount0, uint256 amount1)
+    {
         (amount0, amount1) = IUniswapV3Pool(pool).collect(
             address(this),
-            (config.pool.minTick / config.pool.tickSpacing) * config.pool.tickSpacing,
-            (config.pool.maxTick / config.pool.tickSpacing) * config.pool.tickSpacing,
+            tickLower,
+            tickUpper,
             type(uint128).max,
             type(uint128).max
         );
