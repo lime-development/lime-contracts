@@ -102,6 +102,7 @@ contract ERC20MEMEV2 is
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
         totalMinted = config.initialSupply;
+        require(author_ != address(0), "author_ must be not 0x0");
         author = author_;
     }
 
@@ -196,7 +197,10 @@ contract ERC20MEMEV2 is
         uint256 amount
     ) public view returns (uint256 _price) {
         require(amount < type(uint128).max, "Amount too large"); 
-        _price = ((amount) / config.divider) +  (config.initialMintCost/config.initialSupply)*amount/10000;
+        _price =
+            (amount / config.divider) +
+            ((config.initialMintCost * amount) /
+                (config.initialSupply * 10000));
     }
 
     /**
