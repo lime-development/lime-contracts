@@ -54,7 +54,7 @@ async function main() {
     console.log("Owner:", owner.address, "Balance:", await wrapedToken.balanceOf(owner.address));
     await wrapedToken.approve(await factory.getAddress(), MaxUint256);
     
-    const tx = await factory.createERC20("Test", "Test", WrapToken);
+    const tx = await factory.createERC20("Test", "Test");
     const receipt = await tx.wait();
     const meme = await getERC20Created(receipt);
     const newMEME = await ethers.getContractAt("ERC20MEME", meme);
