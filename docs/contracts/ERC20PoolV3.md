@@ -103,17 +103,39 @@ Emitted when pool fees are collected.
 address pool
 ```
 
+The address of the Uniswap V3 pool associated with this contract.
+
 ### pairedToken
 
 ```solidity
 address pairedToken
 ```
 
+The address of the token paired with this contract's token in the liquidity pool.
+
 ### config
 
 ```solidity
 struct Config.Token config
 ```
+
+The configuration parameters used for pool and liquidity management.
+
+### tickLower
+
+```solidity
+int24 tickLower
+```
+
+tickLower The lower tick of the position in which to add liquidity
+
+### tickUpper
+
+```solidity
+int24 tickUpper
+```
+
+tickUpper The upper tick of the position in which to add liquidity
 
 ### __ERC20PoolV3_init
 
