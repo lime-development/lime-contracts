@@ -56,7 +56,7 @@ This is used to obtain the current price ratio in Uniswap V3._
 ### getLiquidity
 
 ```solidity
-function getLiquidity(uint256 amount0, uint256 amount1, uint160 sqrtRatioX96, int24 tick, int24 min, int24 max) external pure returns (uint128 liquidity)
+function getLiquidity(uint256 amount0, uint256 amount1, uint160 sqrtRatioX96, int24 min, int24 max) external pure returns (uint128 liquidity)
 ```
 
 Computes the liquidity of a Uniswap V3 position.
@@ -71,7 +71,6 @@ and LiquidityAmounts to calculate liquidity._
 | amount0 | uint256 | Amount of token 0. |
 | amount1 | uint256 | Amount of token 1. |
 | sqrtRatioX96 | uint160 | Current price ratio in sqrtPriceX96 format. |
-| tick | int24 | The tick spacing of the pool. |
 | min | int24 | The minimum tick of the liquidity range. |
 | max | int24 | The maximum tick of the liquidity range. |
 
