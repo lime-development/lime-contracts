@@ -97,6 +97,7 @@ contract ERC20MEME is
         __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
         totalMinted = config.initialSupply;
+        require(author_ != address(0), "author_ must be not 0x0");
         author = author_;
     }
 
@@ -193,8 +194,8 @@ contract ERC20MEME is
         require(amount < type(uint128).max, "Amount too large");
         _price =
             ((amount ** 2) / config.divider) +
-            ((config.initialMintCost / config.initialSupply) * amount) /
-            10000;
+            ((config.initialMintCost * amount) /
+                (config.initialSupply * 10000));
     }
 
     /**
