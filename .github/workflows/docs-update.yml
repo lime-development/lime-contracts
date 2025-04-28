@@ -76,9 +76,14 @@ jobs:
           git add -A docs/
           git diff --cached --quiet || git commit -S -m "Update docs [auto]"
 
+      - name: Checkout or create update/docs-auto branch
+        run: |
+          # Create or checkout the update/docs-auto branch
+          git fetch origin
+          git checkout -B update/docs-auto origin/main
+
       - name: Push to update/docs-auto
         run: |
-          git checkout -B update/docs-auto
           git push --force origin update/docs-auto
 
       - name: Create or Update Pull Request
