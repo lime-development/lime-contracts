@@ -222,6 +222,9 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         return amountOut;
     }
 
+
+    /// @notice Callback for UniswapV3Pool Swap
+    /// @param data Data passed through by the addLiquidity() via the IUniswapV3PoolActions#Swap call
     function uniswapV3SwapCallback(
         int256 /*amount0Delta*/,
         int256 /*amount1Delta*/,
