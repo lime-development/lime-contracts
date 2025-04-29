@@ -64,13 +64,13 @@ Emitted when protocol fees are withdrawn
 | token | address | Address of the token being withdrawn |
 | amount | uint256 | Amount of tokens withdrawn |
 
-### ImplementationUpdated
+### ERC20ImplementationUpdated
 
 ```solidity
-event ImplementationUpdated(address newImplementation)
+event ERC20ImplementationUpdated(address newImplementation)
 ```
 
-Emitted when the implementation address is updated
+Emitted when the implementation address for ERC20 tokens is updated
 
 #### Parameters
 
@@ -137,7 +137,7 @@ Called once during proxy deployment by OpenZeppelin Upgrades plugin. DO NOT call
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| initialImplementation_ | address | Address of the initial implementation contract |
+| initialImplementation_ | address | Address of the initial implementation contract for ERC20 tokens |
 | config_ | struct Config.Token | Factory and meme token configuration |
 
 ### _authorizeUpgrade

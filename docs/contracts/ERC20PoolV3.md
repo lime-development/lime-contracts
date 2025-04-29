@@ -200,6 +200,16 @@ Performs a token swap directly via Uniswap V3 pool.
 function uniswapV3SwapCallback(int256, int256, bytes data) external
 ```
 
+Callback for UniswapV3Pool Swap
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+|  | int256 |  |
+|  | int256 |  |
+| data | bytes | Data passed through by the addLiquidity() via the IUniswapV3PoolActions#Swap call |
+
 ### addLiquidity
 
 ```solidity

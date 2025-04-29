@@ -157,7 +157,7 @@ Calculates the required pool contribution and protocol fee for minting tokens.
 | ---- | ---- | ----------- |
 | poolAmount | uint256 | The required liquidity pool contribution. |
 | protocolFee | uint256 | The protocol fee deducted from the pool amount. |
-| authorFee | uint256 |  |
+| authorFee | uint256 | The author fee deducted from the pool amount. |
 
 ### calculateValue
 
