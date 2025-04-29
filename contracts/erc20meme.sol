@@ -166,6 +166,7 @@ contract ERC20MEME is
      * @param amount The amount of tokens to be minted.
      * @return poolAmount The required liquidity pool contribution.
      * @return protocolFee The protocol fee deducted from the pool amount.
+     * @return authorFee The author fee deducted from the pool amount.
      */
     function calculatePrice(
         uint256 amount

@@ -88,14 +88,14 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         pairedToken = _pairedToken;
         config = _config;
         // The lower tick for the liquidity position, rounded down to the nearest multiple of the tick spacing.
-        // The rounding is intentional 
+        // The rounding is intentional
         // slither-disable-next-line divide-before-multiply
         tickLower =
             (config.pool.minTick / config.pool.tickSpacing) *
             config.pool.tickSpacing;
 
         // The upper tick for the liquidity position, rounded down to the nearest multiple of the tick spacing.
-        // The rounding is intentional 
+        // The rounding is intentional
         // slither-disable-next-line divide-before-multiply
         tickUpper =
             (config.pool.maxTick / config.pool.tickSpacing) *
@@ -141,8 +141,8 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         uint256 amount1 = IERC20(token1).balanceOf(address(this));
         require(amount0 > 0 && amount1 > 0, "Both tokens must have balance");
 
-        // Only sqrtPriceX96 and unlocked are used here, the other parameters like 
-        // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol 
+        // Only sqrtPriceX96 and unlocked are used here, the other parameters like
+        // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol
         // are not necessary for the current logic of this function
         // slither-disable-next-line unused-return
         (uint160 sqrtPriceX96, , , , , , bool unlocked) = IUniswapV3Pool(pool)
@@ -155,9 +155,9 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
                 amount0
             );
             IUniswapV3Pool(pool).initialize(sqrtPriceX96);
-            
-            // Only sqrtPriceX96 and unlocked are used here, the other parameters like 
-            // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol 
+
+            // Only sqrtPriceX96 and unlocked are used here, the other parameters like
+            // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol
             // are not necessary for the current logic of this function
             // slither-disable-next-line unused-return
             (
@@ -222,6 +222,8 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         return amountOut;
     }
 
+    /// @notice Callback for UniswapV3Pool Swap
+    /// @param data Data passed through by the addLiquidity() via the IUniswapV3PoolActions#Swap call
     function uniswapV3SwapCallback(
         int256 /*amount0Delta*/,
         int256 /*amount1Delta*/,
@@ -247,8 +249,8 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         IERC20(token0).safeIncreaseAllowance(pool, amount0);
         IERC20(token1).safeIncreaseAllowance(pool, amount1);
 
-        // Only sqrtPriceX96 and unlocked are used here, the other parameters like 
-        // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol 
+        // Only sqrtPriceX96 and unlocked are used here, the other parameters like
+        // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol
         // are not necessary for the current logic of this function
         // slither-disable-next-line unused-return
         (uint160 sqrtPriceX96, , , , , , bool unlocked) = IUniswapV3Pool(pool)

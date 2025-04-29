@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// 
+//
 // This software is licensed under the MIT License for non-commercial use only.
 // Commercial use requires a separate agreement with the author.
 pragma solidity ^0.8.20;
@@ -10,7 +10,6 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC20, ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -25,12 +24,13 @@ import "./config.sol";
  * It also accumulates fees received from token issuance and minting.
  * @author Vorobev Sergei
  */
-contract MemeFactory is 
-        Initializable, 
-        OwnableUpgradeable, 
-        UUPSUpgradeable, 
-        PausableUpgradeable,
-        ReentrancyGuardUpgradeable {
+contract MemeFactory is
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     using SafeERC20 for IERC20;
 
     /// @notice Emitted when a new meme token is created
@@ -52,18 +52,18 @@ contract MemeFactory is
     /// @param amount Amount of tokens withdrawn
     event ProtocolFeeWithdrawn(address indexed token, uint256 amount);
 
-    /// @notice Emitted when the implementation address is updated
+    /// @notice Emitted when the implementation address for ERC20 tokens is updated
     /// @param newImplementation New implementation contract address
-    event ImplementationUpdated(address newImplementation);
+    event ERC20ImplementationUpdated(address newImplementation);
 
-    /// @notice Emitted when the fee was collected from token pool 
+    /// @notice Emitted when the fee was collected from token pool
     /// @param token token address
     event CollectedPoolFees(address token);
 
     /// @notice An array of contracts created through the factory.
     address[] public memeListArray;
 
-    /// @notice Address the current implementation contract for ERC20 contracts. 
+    /// @notice Address the current implementation contract for ERC20 contracts.
     address public implementation;
 
     /// @notice Congig for meme tokens
@@ -79,15 +79,18 @@ contract MemeFactory is
     /**
      * @notice Initializes the Factory with initial configuration for ERC20.
      * Called once during proxy deployment by OpenZeppelin Upgrades plugin. DO NOT call directly.
-     * @param initialImplementation_ Address of the initial implementation contract
+     * @param initialImplementation_ Address of the initial implementation contract for ERC20 tokens
      * @param config_ Factory and meme token configuration
      */
     function initialize(
         address initialImplementation_,
         Config.Token calldata config_
-    ) public initializer() {
-        require(initialImplementation_ != address(0), "Implementation must be not 0x0");
-        __Ownable_init(msg.sender); 
+    ) public initializer {
+        require(
+            initialImplementation_ != address(0),
+            "Implementation must be not 0x0"
+        );
+        __Ownable_init(msg.sender);
         __Pausable_init();
         __ReentrancyGuard_init();
         implementation = initialImplementation_;
@@ -99,7 +102,9 @@ contract MemeFactory is
      * @dev This function ensures only the contract owner can upgrade the implementation.
      * @param newImplementation The address of the new contract implementation.
      */
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 
     /// @notice Returns the current configuration for ERC20 tokens
     /// @return The current token configuration
@@ -117,9 +122,15 @@ contract MemeFactory is
     /// @notice Withdraws protocol fees to the owner
     /// @param tokenAddress Address of the token to withdraw
     /// @param amount Amount to withdraw
-    function withdrawProcotolFee(address tokenAddress, uint256 amount) external onlyOwner {
+    function withdrawProcotolFee(
+        address tokenAddress,
+        uint256 amount
+    ) external onlyOwner {
         IERC20 token = IERC20(tokenAddress);
-        require(token.balanceOf(address(this)) >= amount, "Insufficient balance");
+        require(
+            token.balanceOf(address(this)) >= amount,
+            "Insufficient balance"
+        );
 
         token.safeTransfer(owner(), amount);
         emit ProtocolFeeWithdrawn(tokenAddress, amount);
@@ -130,7 +141,7 @@ contract MemeFactory is
     /// @param name Name of the token
     /// @param symbol Symbol of the token
     /// @return Address of the newly created ERC20 token proxy
-    /// @dev The token is created by the author, so in this method only the platform receives a commission. 
+    /// @dev The token is created by the author, so in this method only the platform receives a commission.
     function createERC20(
         string memory name,
         string memory symbol
@@ -150,46 +161,66 @@ contract MemeFactory is
         uint256 toPool = config.initialMintCost;
         uint256 protocolFee = (toPool * config.protocolFee) / 100000;
         require(
-            IERC20(config.pairedToken).allowance(msg.sender, address(this)) >= (toPool + protocolFee),
+            IERC20(config.pairedToken).allowance(msg.sender, address(this)) >=
+                (toPool + protocolFee),
             "Insufficient allowance"
         );
 
-        IERC20(config.pairedToken).safeTransferFrom(msg.sender, address(this), protocolFee);
-        IERC20(config.pairedToken).safeTransferFrom(msg.sender, proxyAddress, toPool);
+        IERC20(config.pairedToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            protocolFee
+        );
+        IERC20(config.pairedToken).safeTransferFrom(
+            msg.sender,
+            proxyAddress,
+            toPool
+        );
 
         memeListArray.push(proxyAddress);
 
-        require(IERC20MEME(proxyAddress).pool() == address(0), "Pool already initialized");
+        require(
+            IERC20MEME(proxyAddress).pool() == address(0),
+            "Pool already initialized"
+        );
         IERC20MEME(proxyAddress).initializePool();
 
-        emit ERC20Created(proxyAddress,  msg.sender);
+        emit ERC20Created(proxyAddress, msg.sender);
         return proxyAddress;
     }
 
     /// @notice Updates the implementation contract
     /// @param newImplementation Address of the new implementation contract
-    function updateImplementation(address newImplementation) external onlyOwner {
+    function updateImplementation(
+        address newImplementation
+    ) external onlyOwner {
         require(newImplementation.code.length > 0, "Invalid implementation");
         implementation = newImplementation;
-        emit ImplementationUpdated(implementation);
+        emit ERC20ImplementationUpdated(implementation);
     }
-
 
     /// @notice Updates the implementation contract for a batch of tokens
     /// @param startIndex Start index of memeListArray
     /// @param batchSize batch size for memeListArray
-    function updateTokensBatch(uint256 startIndex, uint256 batchSize) external onlyOwner {
+    function updateTokensBatch(
+        uint256 startIndex,
+        uint256 batchSize
+    ) external onlyOwner {
         require(startIndex < memeListArray.length, "Invalid startIndex");
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
         if (endIndex > length) {
             endIndex = length;
         }
-    
+
         for (uint256 i = startIndex; i < endIndex; i++) {
             address proxy = memeListArray[i];
-            try ITransparentUpgradeableProxy(payable(proxy)).upgradeToAndCall(
-                implementation, "") {
+            try
+                ITransparentUpgradeableProxy(payable(proxy)).upgradeToAndCall(
+                    implementation,
+                    ""
+                )
+            {
                 emit ERC20Upgraded(proxy, implementation);
             } catch {
                 emit ERC20Upgraded(proxy, address(0));
@@ -203,16 +234,15 @@ contract MemeFactory is
         for (uint256 i = 0; i < length; i++) {
             try IERC20MEME(memeListArray[i]).collectPoolFees() {
                 emit CollectedPoolFees(memeListArray[i]);
-            } catch {
-            }
+            } catch {}
         }
     }
-    
+
     /// @notice Collects pool fees from meme token
     /// @param meme Address of the meme token
     function collectPoolFees(address meme) external {
-       IERC20MEME(meme).collectPoolFees();
-       emit CollectedPoolFees(meme);
+        IERC20MEME(meme).collectPoolFees();
+        emit CollectedPoolFees(meme);
     }
 
     /**
@@ -234,14 +264,17 @@ contract MemeFactory is
      * @param startIndex Start index of memeListArray
      * @param batchSize batch size for memeListArray
      */
-    function pauseTokensBatch(uint256 startIndex, uint256 batchSize) external onlyOwner {
+    function pauseTokensBatch(
+        uint256 startIndex,
+        uint256 batchSize
+    ) external onlyOwner {
         require(startIndex < memeListArray.length, "Invalid startIndex");
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
         if (endIndex > length) {
             endIndex = length;
         }
-    
+
         for (uint256 i = startIndex; i < endIndex; i++) {
             address token = memeListArray[i];
             IERC20MEME(token).pause();
@@ -253,18 +286,20 @@ contract MemeFactory is
      * @param startIndex Start index of memeListArray
      * @param batchSize batch size for memeListArray
      */
-    function unpauseTokensBatch(uint256 startIndex, uint256 batchSize) external onlyOwner {
+    function unpauseTokensBatch(
+        uint256 startIndex,
+        uint256 batchSize
+    ) external onlyOwner {
         require(startIndex < memeListArray.length, "Invalid startIndex");
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
         if (endIndex > length) {
             endIndex = length;
         }
-    
+
         for (uint256 i = startIndex; i < endIndex; i++) {
             address token = memeListArray[i];
             IERC20MEME(token).unpause();
         }
     }
-
 }
