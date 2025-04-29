@@ -52,9 +52,9 @@ contract MemeFactory is
     /// @param amount Amount of tokens withdrawn
     event ProtocolFeeWithdrawn(address indexed token, uint256 amount);
 
-    /// @notice Emitted when the implementation address is updated
+    /// @notice Emitted when the implementation address for ERC20 tokens is updated
     /// @param newImplementation New implementation contract address
-    event ImplementationUpdated(address newImplementation);
+    event ERC20ImplementationUpdated(address newImplementation);
 
     /// @notice Emitted when the fee was collected from token pool 
     /// @param token token address
@@ -79,7 +79,7 @@ contract MemeFactory is
     /**
      * @notice Initializes the Factory with initial configuration for ERC20.
      * Called once during proxy deployment by OpenZeppelin Upgrades plugin. DO NOT call directly.
-     * @param initialImplementation_ Address of the initial implementation contract
+     * @param initialImplementation_ Address of the initial implementation contract for ERC20 tokens
      * @param config_ Factory and meme token configuration
      */
     function initialize(
@@ -171,7 +171,7 @@ contract MemeFactory is
     function updateImplementation(address newImplementation) external onlyOwner {
         require(newImplementation.code.length > 0, "Invalid implementation");
         implementation = newImplementation;
-        emit ImplementationUpdated(implementation);
+        emit ERC20ImplementationUpdated(implementation);
     }
 
 
