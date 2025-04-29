@@ -24,7 +24,7 @@ interface IMemeFactory {
 
     /// @notice Emitted when the implementation address is updated
     /// @param newImplementation New implementation contract address
-    event ImplementationUpdated(address newImplementation);
+    event ERC20ImplementationUpdated(address newImplementation);
 
     /// @notice Emitted when the fee was collected from token pool 
     /// @param token token address
@@ -101,5 +101,30 @@ interface IMemeFactory {
      */
     function unpauseTokensBatch(uint256 startIndex, uint256 batchSize) external;
 
+
+    /// @notice Returns the configuration parameters for pool and liquidity management.
+    function config()
+        external
+        view
+        returns (
+            address factory,
+            address pairedToken,
+            address getLiquidity,
+            uint256 initialSupply,
+            uint256 initialMintCost,
+            uint24 fee,
+            int24 tickSpacing,
+            int24 minTick,
+            int24 maxTick,
+            uint256 protocolFee,
+            uint256 authorFee,
+            uint256 divider
+        );
+
+    /// @notice Returns the address of a meme token at the given index in the list.
+    function memeListArray(uint256 index) external view returns (address);
+
+    /// @notice Returns the address of implementation.
+    function implementation() external view returns (address);
 
 }
