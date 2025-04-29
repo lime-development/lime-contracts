@@ -35,7 +35,7 @@ interface IERC20MEME {
         address author_
     ) external;
 
-   /**
+    /**
      * @notice Overrides the ERC20 decimals function to set 6 decimal places.
      * @return uint8 The number of decimal places for the token.
      */
@@ -57,14 +57,19 @@ interface IERC20MEME {
      */
     function burn(uint256 amount) external;
 
-     /**
+    /**
      * @notice Calculates the required pool contribution and protocol fee for minting tokens.
      * @param amount The amount of tokens to be minted.
      * @return poolAmount The required liquidity pool contribution.
      * @return protocolFee The protocol fee deducted from the pool amount.
      * @return authorFee The author fee deducted from the pool amount.
      */
-    function calculatePrice(uint256 amount) external view returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee);
+    function calculatePrice(
+        uint256 amount
+    )
+        external
+        view
+        returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee);
 
     /**
      * @notice Computes a liquidity-based valuation using a cubic function.
@@ -72,9 +77,11 @@ interface IERC20MEME {
      * @param amount The token amount to calculate its value.
      * @return _price The computed value based on liquidity mechanics.
      */
-    function calculateValue(uint256 amount) external view returns (uint256 _price);
-    
-        /**
+    function calculateValue(
+        uint256 amount
+    ) external view returns (uint256 _price);
+
+    /**
      * @notice Collects accumulated pool fees and transfers them to the contract owner.
      * @dev Ensures at least one token amount is greater than zero.
      */
@@ -86,11 +93,11 @@ interface IERC20MEME {
     /// @notice Unpause mint from factory
     function unpause() external;
 
-     /// @notice Creates and initializes the liquidity pool if it has not been initialized yet.
+    /// @notice Creates and initializes the liquidity pool if it has not been initialized yet.
     /// @dev The function is separated from __ERC20PoolV3_init to perform approval on the contract address after Init.
     function initializePool() external;
 
-      /// @notice Callback for UniswapV3Pool Swap
+    /// @notice Callback for UniswapV3Pool Swap
     /// @param data Data passed through by the addLiquidity() via the IUniswapV3PoolActions#Swap call
     function uniswapV3SwapCallback(
         int256 /*amount0Delta*/,
@@ -106,17 +113,16 @@ interface IERC20MEME {
         uint256 amount0,
         uint256 amount1,
         bytes calldata data
-    ) external; 
+    ) external;
 
     /// @notice Returns the token pair addresses in the correct order for Uniswap V3.
-    function getTokens() external; 
+    function getTokens() external;
 
     /// @notice Returns the address of token author
     function author() external view returns (address);
 
     /// @notice Returns the total minted tokens
     function totalMinted() external view returns (uint256);
-
 
     /// @notice Returns the address of the Uniswap V3 pool used by this contract.
     function pool() external view returns (address);
@@ -148,5 +154,4 @@ interface IERC20MEME {
 
     /// @notice Returns the upper tick boundary for the liquidity position.
     function tickUpper() external view returns (int24);
-
 }
