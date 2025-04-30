@@ -1,10 +1,14 @@
+---
+layout: default
+title: GetLiquidity
+---
 # Solidity API
 
 ## getLiquidityHelper
 
 _Helper contract for calculating liquidity in Uniswap V3.
-This contract serves as an intermediary for utilizing TickMath.sol 
-and LiquidityAmounts.sol from Uniswap V3. It simplifies the process 
+This contract serves as an intermediary for utilizing TickMath.sol
+and LiquidityAmounts.sol from Uniswap V3. It simplifies the process
 of computing liquidity and relevant values for Uniswap V3 pools._
 
 ### sqrt

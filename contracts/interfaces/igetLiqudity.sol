@@ -33,5 +33,4 @@ interface igetLiquidity {
         uint256 amountToken1,
         uint256 amountToken0
     ) external pure returns (uint160);
-    
 }

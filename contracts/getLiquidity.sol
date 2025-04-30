@@ -1,22 +1,21 @@
 // SPDX-License-Identifier: MIT
-// 
+//
 // This software is licensed under the MIT License for non-commercial use only.
 // Commercial use requires a separate agreement with the author.
 pragma solidity =0.7.6;
 
-import '@uniswap/v3-core/contracts/libraries/TickMath.sol';
-import '@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol';
+import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
+import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 
 /**
  * @title getLiquidityHelper
  * @dev Helper contract for calculating liquidity in Uniswap V3.
- * This contract serves as an intermediary for utilizing TickMath.sol 
- * and LiquidityAmounts.sol from Uniswap V3. It simplifies the process 
+ * This contract serves as an intermediary for utilizing TickMath.sol
+ * and LiquidityAmounts.sol from Uniswap V3. It simplifies the process
  * of computing liquidity and relevant values for Uniswap V3 pools.
  * @author Vorobev Sergei
  */
 contract getLiquidityHelper {
-
     /**
      * @notice Computes the integer square root of a number.
      * @dev Uses Newton's method (binary search) for an approximate sqrt(x) calculation.
@@ -41,8 +40,14 @@ contract getLiquidityHelper {
      * @param amountToken0 Amount of token 0.
      * @return uint160 The calculated sqrtPriceX96.
      */
-    function getSqrtPriceX96(uint256 amountToken1, uint256 amountToken0) public pure returns (uint160) {
-        require(amountToken0 > 0 && amountToken1 > 0, "Amounts must be positive");
+    function getSqrtPriceX96(
+        uint256 amountToken1,
+        uint256 amountToken0
+    ) public pure returns (uint160) {
+        require(
+            amountToken0 > 0 && amountToken1 > 0,
+            "Amounts must be positive"
+        );
         uint256 price = (amountToken1 * 1e18) / amountToken0; // price in token1/token0
         uint256 sqrtPrice = sqrt(price);
         return uint160((sqrtPrice * (1 << 96)) / 1e9); // Adjust for precision
@@ -68,6 +73,12 @@ contract getLiquidityHelper {
     ) external pure returns (uint128 liquidity) {
         uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(min);
         uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(max);
-        liquidity = LiquidityAmounts.getLiquidityForAmounts(sqrtRatioX96, sqrtRatioAX96, sqrtRatioBX96, amount0, amount1);
+        liquidity = LiquidityAmounts.getLiquidityForAmounts(
+            sqrtRatioX96,
+            sqrtRatioAX96,
+            sqrtRatioBX96,
+            amount0,
+            amount1
+        );
     }
 }

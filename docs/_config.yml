@@ -22,6 +22,7 @@ kramdown:
 # GitHub Pages auto-includes github-metadata plugin
 github:
   is_project_page: true
+
   
 # Exclude directories and files
 exclude:
