@@ -49,6 +49,7 @@ jobs:
 
       - name: Generate index.md
         run: |
+          rm -r ./docs/contracts/test || true
           echo "# Documentation Index" > ./docs/index.md
           echo "" >> ./docs/index.md
           for dir in $(find ./docs -type d ! -path './docs'); do
@@ -83,8 +84,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          rm -r ./docs/contracts/test || true
-
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global commit.gpgsign true
