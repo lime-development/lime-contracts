@@ -1,3 +1,7 @@
+---
+layout: default
+title: ERC20PoolV3
+---
 # Solidity API
 
 ## ERC20PoolV3
