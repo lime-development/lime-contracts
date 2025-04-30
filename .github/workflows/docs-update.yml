@@ -12,6 +12,7 @@ on:
     paths:
       - '**/*.sol'
       - '**/*.js'
+  workflow_dispatch:
 
 jobs:
   update-and-pull-request:
@@ -49,6 +50,7 @@ jobs:
 
       - name: Generate index.md
         run: |
+          rm -r ./docs/contracts/test || true
           echo "# Documentation Index" > ./docs/index.md
           echo "" >> ./docs/index.md
           for dir in $(find ./docs -type d ! -path './docs'); do
@@ -62,6 +64,36 @@ jobs:
           done
           echo "_Updated at $(date '+%Y-%m-%d %H:%M:%S')_" >> ./docs/index.md
 
+      - name: Add Front Matter to Markdown files
+        run: |
+          # Add front matter to all Markdown files that don't have it
+          find ./docs -name "*.md" | while read file; do
+            # Skip index.md as it's generated separately
+            if [[ $(basename "$file") == "index.md" ]]; then
+              continue
+            fi
+            
+            # Check if front matter already exists
+            if ! grep -q "^---" "$file"; then
+              # Get filename without extension for title
+              filename=$(basename "$file" .md)
+              # Make title more readable by replacing hyphens with spaces and capitalizing
+              title=$(echo "$filename" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+              
+              # Create temporary file with front matter
+              echo "---" > temp_file
+              echo "layout: default" >> temp_file
+              echo "title: $title" >> temp_file
+              echo "---" >> temp_file
+              
+              # Append original content
+              cat "$file" >> temp_file
+              
+              # Replace original file
+              mv temp_file "$file"
+            fi
+          done
+  
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         with:
@@ -83,8 +115,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          rm -r ./docs/contracts/test || true
-
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global commit.gpgsign true
