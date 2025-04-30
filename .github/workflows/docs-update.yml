@@ -51,15 +51,16 @@ jobs:
       - name: Generate index.md
         run: |
           rm -r ./docs/contracts/test || true
-          echo "# Documentation Index" > ./docs/index.md
+          echo "# Lime Documentation Index" > ./docs/index.md
           echo "" >> ./docs/index.md
           for dir in $(find ./docs -type d ! -path './docs'); do
             echo "## $(basename "$dir")" >> ./docs/index.md
             for file in $(find "$dir" -maxdepth 1 -name '*.md'); do
               filename=$(basename "$file")
               name="${filename%.md}"
-              link_path="/${file#./docs/}"
-              link_path="${link_path%.md}"
+              relative_path="${file#./docs/}"
+              relative_path="${relative_path%.md}"
+              link_path="lime-contracts/${relative_path}"
               echo "- [${name}](${link_path})" >> ./docs/index.md
             done
             echo "" >> ./docs/index.md
