@@ -71,32 +71,42 @@ jobs:
         run: |
           # Add front matter to all Markdown files that don't have it
           find ./docs -name "*.md" | while read file; do
-            # Skip index.md as it's generated separately
-            if [[ $(basename "$file") == "index.md" ]]; then
+            filename=$(basename "$file")
+            echo "Processing: $file"
+        
+            # Skip index.md
+            if [[ "$filename" == "index.md" ]]; then
+              echo "  Skipped: index.md (explicit exclusion)"
               continue
             fi
-            
-            # Check if front matter already exists
-            if ! grep -q "^---" "$file"; then
-              # Get filename without extension for title
-              filename=$(basename "$file" .md)
-              # Make title more readable by replacing hyphens with spaces and capitalizing
-              title=$(echo "$filename" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
-              
-              # Create temporary file with front matter
-              echo "---" > temp_file
-              echo "layout: default" >> temp_file
-              echo "title: $title" >> temp_file
-              echo "---" >> temp_file
-              
-              # Append original content
-              cat "$file" >> temp_file
-              
-              # Replace original file
-              mv temp_file "$file"
+        
+            # Check if front matter already exists (looking for '---' at beginning of file)
+            if head -n 1 "$file" | grep -q "^---"; then
+              echo "  Skipped: front matter already exists"
+              continue
             fi
+        
+            # Generate title from filename
+            name_without_ext="${filename%.md}"
+            title=$(echo "$name_without_ext" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+        
+            # Use a unique temp file
+            temp_file=$(mktemp)
+        
+            # Write front matter
+            {
+              echo "---"
+              echo "layout: default"
+              echo "title: $title"
+              echo "---"
+              cat "$file"
+            } > "$temp_file"
+        
+            # Replace original file
+            mv "$temp_file" "$file"
+            echo "  Updated: front matter added"
           done
-  
+
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         with:
