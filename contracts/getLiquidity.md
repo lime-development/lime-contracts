@@ -1,3 +1,7 @@
+---
+layout: default
+title: GetLiquidity
+---
 # Solidity API
 
 ## getLiquidityHelper

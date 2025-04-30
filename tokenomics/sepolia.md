@@ -1,3 +1,7 @@
+---
+layout: default
+title: Sepolia
+---
 | Market Cap (USD) | Token Price (USD) | Token Price Growth (%) | Minted Token (Amount) | Total Spent (Token) | Author Revenue (USD) | Platform Mint Fee (USD) |
 |------------------|-------------------|------------------------|-----------------------|--------------------|-------------------------|-------------------------|
 | 0.01 | 0.000000 | 99.00 | 100000 | 0.01 | 0.00 | 0.00 |

@@ -1,3 +1,7 @@
+---
+layout: default
+title: Haqq
+---
 | Market Cap (USD) | Token Price (USD) | Token Price Growth (%) | Minted Token (Amount) | Total Spent (Token) | Author Revenue (USD) | Platform Mint Fee (USD) |
 |------------------|-------------------|------------------------|-----------------------|--------------------|-------------------------|-------------------------|
 | 35.05 | 0.000350 | 99.00 | 100000 | 858.02 | 0.79 | 0.08 |
