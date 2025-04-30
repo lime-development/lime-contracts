@@ -58,7 +58,9 @@ jobs:
             for file in $(find "$dir" -maxdepth 1 -name '*.md'); do
               filename=$(basename "$file")
               name="${filename%.md}"
-              echo "- [${name}](${dir#./}/$filename)" >> ./docs/index.md
+              link_path="/${file#./docs/}"
+              link_path="${link_path%.md}"
+              echo "- [${name}](${link_path})" >> ./docs/index.md
             done
             echo "" >> ./docs/index.md
           done
