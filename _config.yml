@@ -1,7 +1,7 @@
 # Jekyll configuration for Solidity Smart Contracts documentation
 title: Smart Contracts Documentation
 description: Documentation for Solidity Smart Contracts generated with hardhat docgen
-theme: jekyll-theme-midnight
+theme: jekyll-theme-cayman
 
 # Site settings
 lang: en
@@ -19,8 +19,10 @@ kramdown:
       line_numbers: true
       start_line: 1
 
-# Allow GitHub to process the site
-github: [metadata]
+# GitHub Pages auto-includes github-metadata plugin
+github:
+  is_project_page: true
+
   
 # Exclude directories and files
 exclude:
