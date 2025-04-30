@@ -60,7 +60,7 @@ jobs:
               name="${filename%.md}"
               relative_path="${file#./docs/}"
               relative_path="${relative_path%.md}"
-              link_path="lime-contracts/${relative_path}"
+              link_path="${relative_path}"
               echo "- [${name}](${link_path})" >> ./docs/index.md
             done
             echo "" >> ./docs/index.md
