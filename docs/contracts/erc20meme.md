@@ -1,3 +1,7 @@
+---
+layout: default
+title: Erc20meme
+---
 # Solidity API
 
 ## ERC20MEME
