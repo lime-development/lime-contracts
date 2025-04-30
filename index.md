@@ -1,23 +1,23 @@
 # Documentation Index
 
 ## tokenomics
-- [ethereum](docs/tokenomics/ethereum.md)
-- [haqq](docs/tokenomics/haqq.md)
-- [bnb](docs/tokenomics/bnb.md)
-- [base](docs/tokenomics/base.md)
-- [sepolia](docs/tokenomics/sepolia.md)
+- [ethereum](/tokenomics/ethereum)
+- [haqq](/tokenomics/haqq)
+- [bnb](/tokenomics/bnb)
+- [base](/tokenomics/base)
+- [sepolia](/tokenomics/sepolia)
 
 ## contracts
-- [erc20meme](docs/contracts/erc20meme.md)
-- [memeFactory](docs/contracts/memeFactory.md)
-- [ERC20PoolV3](docs/contracts/ERC20PoolV3.md)
-- [getLiquidity](docs/contracts/getLiquidity.md)
-- [config](docs/contracts/config.md)
+- [erc20meme](/contracts/erc20meme)
+- [memeFactory](/contracts/memeFactory)
+- [ERC20PoolV3](/contracts/ERC20PoolV3)
+- [getLiquidity](/contracts/getLiquidity)
+- [config](/contracts/config)
 
 ## interfaces
-- [IWETH9](docs/contracts/interfaces/IWETH9.md)
-- [igetLiqudity](docs/contracts/interfaces/igetLiqudity.md)
-- [IERC20MEME](docs/contracts/interfaces/IERC20MEME.md)
-- [IMemeFactory](docs/contracts/interfaces/IMemeFactory.md)
+- [IWETH9](/contracts/interfaces/IWETH9)
+- [igetLiqudity](/contracts/interfaces/igetLiqudity)
+- [IERC20MEME](/contracts/interfaces/IERC20MEME)
+- [IMemeFactory](/contracts/interfaces/IMemeFactory)
 
-_Updated at 2025-04-30 00:47:17_
+_Updated at 2025-04-30 01:09:04_
