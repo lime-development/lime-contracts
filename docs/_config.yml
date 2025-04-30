@@ -1,6 +1,6 @@
 # Jekyll configuration for Solidity Smart Contracts documentation
-title: Smart Contracts Documentation
-description: Documentation for Solidity Smart Contracts generated with hardhat docgen
+title: Lime Smart Contracts Documentation
+description: Lime Smart Contracts Documentation
 theme: jekyll-theme-cayman
 
 # Site settings
