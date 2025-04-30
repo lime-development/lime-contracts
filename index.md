@@ -20,4 +20,4 @@
 - [IERC20MEME](/contracts/interfaces/IERC20MEME)
 - [IMemeFactory](/contracts/interfaces/IMemeFactory)
 
-_Updated at 2025-04-30 01:09:04_
+_Updated at 2025-04-30 01:15:35_
