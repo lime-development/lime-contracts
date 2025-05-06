@@ -96,6 +96,12 @@ Emitted when the fee was collected from token pool
 | ---- | ---- | ----------- |
 | token | address | token address |
 
+### FEE_DENOMINATOR
+
+```solidity
+uint256 FEE_DENOMINATOR
+```
+
 ### memeListArray
 
 ```solidity
@@ -131,7 +137,7 @@ This contract should be deployed via a proxy using OpenZeppelin's upgradeable me
 ### initialize
 
 ```solidity
-function initialize(address initialImplementation_, struct Config.Token config_) public
+function initialize(address initialImplementation, struct Config.Token tokensConfig) public
 ```
 
 Initializes the Factory with initial configuration for ERC20.
@@ -141,8 +147,8 @@ Called once during proxy deployment by OpenZeppelin Upgrades plugin. DO NOT call
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| initialImplementation_ | address | Address of the initial implementation contract for ERC20 tokens |
-| config_ | struct Config.Token | Factory and meme token configuration |
+| initialImplementation | address | Address of the initial implementation contract for ERC20 tokens |
+| tokensConfig | struct Config.Token | Factory and meme token configuration |
 
 ### _authorizeUpgrade
 
@@ -177,7 +183,7 @@ Returns the current configuration for ERC20 tokens
 ### updateConfig
 
 ```solidity
-function updateConfig(struct Config.Token _config) external
+function updateConfig(struct Config.Token tokensConfig) external
 ```
 
 Updates the for ERC20 tokens configuration
@@ -186,7 +192,7 @@ Updates the for ERC20 tokens configuration
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _config | struct Config.Token | New configuration values |
+| tokensConfig | struct Config.Token | New configuration values |
 
 ### withdrawProcotolFee
 
@@ -259,7 +265,7 @@ Updates the implementation contract for a batch of tokens
 ### collectPoolsFees
 
 ```solidity
-function collectPoolsFees() external
+function collectPoolsFees(uint256 startIndex, uint256 batchSize) external
 ```
 
 Collects pool fees from all token
@@ -323,4 +329,12 @@ Unpause token batch
 | ---- | ---- | ----------- |
 | startIndex | uint256 | Start index of memeListArray |
 | batchSize | uint256 | batch size for memeListArray |
+
+### memeListArrayLength
+
+```solidity
+function memeListArrayLength() external view returns (uint256)
+```
+
+Returns the number of meme tokens created
 
