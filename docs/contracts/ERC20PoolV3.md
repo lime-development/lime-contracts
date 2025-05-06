@@ -101,6 +101,22 @@ Emitted when pool fees are collected.
 | amount0 | uint256 | The amount of the token0 token collected as fees. |
 | amount1 | uint256 | The amount of the token1 token collected as fees. |
 
+### MIN_SQRT_RATIO
+
+```solidity
+uint160 MIN_SQRT_RATIO
+```
+
+Const for Uniswapv3 calculations
+
+### MAX_SQRT_RATIO
+
+```solidity
+uint160 MAX_SQRT_RATIO
+```
+
+Const for Uniswapv3 calculations
+
 ### pool
 
 ```solidity
@@ -109,10 +125,10 @@ address pool
 
 The address of the Uniswap V3 pool associated with this contract.
 
-### pairedToken
+### poolToken
 
 ```solidity
-address pairedToken
+address poolToken
 ```
 
 The address of the token paired with this contract's token in the liquidity pool.
@@ -144,7 +160,7 @@ tickUpper The upper tick of the position in which to add liquidity
 ### __ERC20PoolV3_init
 
 ```solidity
-function __ERC20PoolV3_init(address _pairedToken, struct Config.Token _config) internal
+function __ERC20PoolV3_init(address poolTokenAddr, struct Config.Token tokenConfig) internal
 ```
 
 Initializes the contract with the paired token and configuration.
@@ -153,8 +169,8 @@ Initializes the contract with the paired token and configuration.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _pairedToken | address | The address of the token with which the pool is to be created. |
-| _config | struct Config.Token | The configuration structure containing pool settings. |
+| poolTokenAddr | address | The address of the token with which the pool is to be created. |
+| tokenConfig | struct Config.Token | The configuration structure containing pool settings. |
 
 ### initializePool
 
@@ -225,7 +241,7 @@ Adds liquidity to the Uniswap V3 pool.
 ### uniswapV3MintCallback
 
 ```solidity
-function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes data) public
+function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes data) external
 ```
 
 Callback for UniswapV3Pool mint

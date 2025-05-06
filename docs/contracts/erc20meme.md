@@ -64,6 +64,18 @@ Emitted when tokens are burned.
 | from | address | Address from which tokens were burned. |
 | amount | uint256 | Amount of tokens burned. |
 
+### FEE_DENOMINATOR
+
+```solidity
+uint256 FEE_DENOMINATOR
+```
+
+### INITIAL_SUPPLY_SCALE_FACTOR
+
+```solidity
+uint256 INITIAL_SUPPLY_SCALE_FACTOR
+```
+
 ### constructor
 
 ```solidity
@@ -76,7 +88,7 @@ This contract should be deployed via a proxy using OpenZeppelin's upgradeable me
 ### initialize
 
 ```solidity
-function initialize(string name, string symbol, address pairedToken_, address author_) public
+function initialize(string memeName, string memeSymbol, address poolTokenAddr, address user) public
 ```
 
 Initializes the ERC20MEME contract.
@@ -88,10 +100,10 @@ Sets the token name, symbol, and initializes inherited upgradeable contracts._
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| name | string | The name of the token. |
-| symbol | string | The symbol of the token. |
-| pairedToken_ | address | The address of the paired token for liquidity. |
-| author_ | address | The address of the paired token for liquidity. |
+| memeName | string | The name of the token. |
+| memeSymbol | string | The symbol of the token. |
+| poolTokenAddr | address | The address of the paired token for liquidity. |
+| user | address | The address of the paired token for liquidity. |
 
 ### decimals
 
