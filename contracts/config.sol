@@ -2,7 +2,7 @@
 //
 // This software is licensed under the MIT License for non-commercial use only.
 // Commercial use requires a separate agreement with the author.
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.22;
 
 /// @title Config
 /// @notice Holds configuration parameters used during token creation by the factory and subsequently the tokens themselves.

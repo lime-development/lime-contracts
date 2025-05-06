@@ -1,44 +1,61 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.22;
 import "../config.sol";
 
 interface IMemeFactory {
     /// @notice Emitted when a new meme token is created
     /// @param proxy Address of the created meme token proxy
     /// @param author Meme author address
-    event ERC20Created(address proxy, address author);
+    event ERC20Created(address indexed proxy, address indexed author);
 
     /// @notice Emitted when an ERC20 token is upgraded
     /// @param proxy Address of the upgraded token proxy
     /// @param newImplementation New implementation contract address
-    event ERC20Upgraded(address proxy, address newImplementation);
+    event ERC20Upgraded(
+        address indexed proxy,
+        address indexed newImplementation
+    );
 
     /// @notice Emitted when the configuration is updated
     /// @param newConfig New token configuration
-    event ConfigUpdated(Config.Token newConfig);
+    event ConfigUpdated(Config.Token indexed newConfig);
 
     /// @notice Emitted when protocol fees are withdrawn
     /// @param token Address of the token being withdrawn
     /// @param amount Amount of tokens withdrawn
-    event ProtocolFeeWithdrawn(address indexed token, uint256 amount);
+    event ProtocolFeeWithdrawn(address indexed token, uint256 indexed amount);
 
-    /// @notice Emitted when the implementation address is updated
+    /// @notice Emitted when the implementation address for ERC20 tokens is updated
     /// @param newImplementation New implementation contract address
-    event ERC20ImplementationUpdated(address newImplementation);
+    event ERC20ImplementationUpdated(address indexed newImplementation);
 
     /// @notice Emitted when the fee was collected from token pool
     /// @param token token address
-    event CollectedPoolFees(address token);
+    event CollectedPoolFees(address indexed token);
+
+    /// @notice Precision denominator for fee calculations (0.001%)
+    // slither-disable-next-line naming-convention
+    function FEE_DENOMINATOR() external pure returns (uint256);
+
+    /// @notice Returns the address of a meme token at the given index in the list.
+    function memeListArray(uint256 index) external view returns (address);
+
+    /// @notice Address the current implementation contract for ERC20 contracts.
+    function implementation() external pure returns (address);
+
+    /// @notice Returns the current configuration for ERC20 tokens
+    /// @return The current token configuration
+    function config() external view returns (Config.Token memory);
 
     /**
      * @notice Initializes the Factory with initial configuration for ERC20.
      * Called once during proxy deployment by OpenZeppelin Upgrades plugin. DO NOT call directly.
-     * @param initialImplementation_ Address of the initial implementation contract
-     * @param config_ Factory and meme token configuration
+     * @param initialImplementation Address of the initial implementation contract for ERC20 tokens
+     * @param tokensConfig Factory and meme token configuration
      */
     function initialize(
-        address initialImplementation_,
-        Config.Token calldata config_
+        address initialImplementation,
+        Config.Token calldata tokensConfig
     ) external;
 
     /// @notice Returns the current configuration for ERC20 tokens
@@ -46,8 +63,8 @@ interface IMemeFactory {
     function getConfig() external view returns (Config.Token memory);
 
     /// @notice Updates the for ERC20 tokens configuration
-    /// @param _config New configuration values
-    function updateConfig(Config.Token memory _config) external;
+    /// @param tokensConfig New configuration values
+    function updateConfig(Config.Token memory tokensConfig) external;
 
     /// @notice Withdraws protocol fees to the owner
     /// @param tokenAddress Address of the token to withdraw
@@ -75,16 +92,20 @@ interface IMemeFactory {
     function updateTokensBatch(uint256 startIndex, uint256 batchSize) external;
 
     /// @notice Collects pool fees from all token
-    function collectPoolsFees() external;
+    function collectPoolsFees(uint256 startIndex, uint256 batchSize) external;
 
     /// @notice Collects pool fees from meme token
     /// @param meme Address of the meme token
     function collectPoolFees(address meme) external;
 
-    ///@notice Pause create new token
+    /**
+     * @notice Pause create new token
+     */
     function pause() external;
 
-    ///@notice Unpause create new token
+    /**
+     * @notice Unpause create new token
+     */
     function unpause() external;
 
     /**
@@ -101,28 +122,6 @@ interface IMemeFactory {
      */
     function unpauseTokensBatch(uint256 startIndex, uint256 batchSize) external;
 
-    /// @notice Returns the configuration parameters for pool and liquidity management.
-    function config()
-        external
-        view
-        returns (
-            address factory,
-            address pairedToken,
-            address getLiquidity,
-            uint256 initialSupply,
-            uint256 initialMintCost,
-            uint24 fee,
-            int24 tickSpacing,
-            int24 minTick,
-            int24 maxTick,
-            uint256 protocolFee,
-            uint256 authorFee,
-            uint256 divider
-        );
-
-    /// @notice Returns the address of a meme token at the given index in the list.
-    function memeListArray(uint256 index) external view returns (address);
-
-    /// @notice Returns the address of implementation.
-    function implementation() external view returns (address);
+    /// @notice Returns the number of meme tokens created
+    function memeListArrayLength() external view returns (uint256);
 }

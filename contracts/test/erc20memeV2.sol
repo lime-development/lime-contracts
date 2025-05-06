@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-// 
+//
 // This software is licensed under the MIT License for non-commercial use only.
 // Commercial use requires a separate agreement with the author.
-pragma solidity ^0.8.20;
-
+pragma solidity ^0.8.22;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -13,20 +12,17 @@ import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-
 import {IMemeFactory} from "../interfaces/IMemeFactory.sol";
 import {Config} from "../config.sol";
-import {igetLiquidity} from "../interfaces/igetLiqudity.sol";
 import {ERC20PoolV3} from "../ERC20PoolV3.sol";
 
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-
 
 /**
  * @title ERC20MEME
  * @dev An upgradeable ERC20 token with minting, liquidity management, and protocol fee collection.
  * This contract extends multiple OpenZeppelin upgradeable modules and integrates Uniswap V3 liquidity management.
- * 
+ *
  * Features:
  * - UUPS (Universal Upgradeable Proxy Standard) upgradeability.
  * - Ownable functionality with restricted access control.
@@ -42,7 +38,7 @@ contract ERC20MEMEV2 is
     UUPSUpgradeable,
     ERC20PoolV3,
     ReentrancyGuardUpgradeable,
-    PausableUpgradeable  
+    PausableUpgradeable
 {
     using SafeERC20 for IERC20;
 
@@ -69,7 +65,9 @@ contract ERC20MEMEV2 is
     /// @param amount Amount of tokens burned.
     event Burn(address indexed from, uint256 amount);
 
-    
+    uint256 public constant FEE_DENOMINATOR = 100_000; // precision: 0.001%
+    uint256 public constant INITIAL_SUPPLY_SCALE_FACTOR = 10_000; // Used for 0.01% precision
+
     /// @dev Constructor disables initializers to prevent direct deployment.
     /// This contract should be deployed via a proxy using OpenZeppelin's upgradeable mechanism.
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -81,29 +79,29 @@ contract ERC20MEMEV2 is
      * @notice Initializes the ERC20MEME contract.
      * @dev Can only be called once due to the `initializer` modifier.
      * Sets the token name, symbol, and initializes inherited upgradeable contracts.
-     * @param name The name of the token.
-     * @param symbol The symbol of the token.
-     * @param pairedToken_ The address of the paired token for liquidity.
-     * @param author_ The address of the paired token for liquidity.
+     * @param memeName The name of the token.
+     * @param memeSymbol The symbol of the token.
+     * @param poolTokenAddr The address of the paired token for liquidity.
+     * @param user The address of the paired token for liquidity.
      */
     function initialize(
-        string memory name,
-        string memory symbol,
-        address pairedToken_,
-        address author_
+        string memory memeName,
+        string memory memeSymbol,
+        address poolTokenAddr,
+        address user
     ) public initializer {
-        require(pairedToken_ != address(0), "pairedToken must be not 0x0");
-        __ERC20_init(name, symbol);
+        require(poolTokenAddr != address(0), "poolToken must be not 0x0");
+        __ERC20_init(memeName, memeSymbol);
         __Ownable_init(msg.sender);
-        __ERC20Permit_init(name);
+        __ERC20Permit_init(memeName);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
         __Pausable_init();
-        __ERC20PoolV3_init(pairedToken_, IMemeFactory(msg.sender).getConfig());
+        __ERC20PoolV3_init(poolTokenAddr, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
         totalMinted = config.initialSupply;
-        require(author_ != address(0), "author_ must be not 0x0");
-        author = author_;
+        require(user != address(0), "user must be not 0x0");
+        author = user;
     }
 
     /**
@@ -137,19 +135,15 @@ contract ERC20MEMEV2 is
             "The withdrawAmount greater than zero is required for a mint."
         );
 
-        IERC20(pairedToken).safeTransferFrom(
-            msg.sender,
-            address(this),
-            withdraw
-        );
+        IERC20(poolToken).safeTransferFrom(msg.sender, address(this), withdraw);
 
         _mint(to, amount);
         totalMinted += amount;
 
-        IERC20(pairedToken).safeTransfer(author, authorFee);
-        IERC20(pairedToken).safeTransfer(owner(), protocolFee);
+        IERC20(poolToken).safeTransfer(author, authorFee);
+        IERC20(poolToken).safeTransfer(owner(), protocolFee);
 
-        swap(pairedToken, poolAmount / 2, 0);
+        swap(poolToken, poolAmount / 2, 0);
         addLiquidity();
 
         emit Mint(to, amount, poolAmount, protocolFee);
@@ -171,6 +165,7 @@ contract ERC20MEMEV2 is
      * @param amount The amount of tokens to be minted.
      * @return poolAmount The required liquidity pool contribution.
      * @return protocolFee The protocol fee deducted from the pool amount.
+     * @return authorFee The author fee deducted from the pool amount.
      */
     function calculatePrice(
         uint256 amount
@@ -183,8 +178,8 @@ contract ERC20MEMEV2 is
         poolAmount =
             calculateValue(totalMinted + amount) -
             calculateValue(totalMinted);
-        protocolFee = (poolAmount * config.protocolFee) / 100000;
-        authorFee = (poolAmount * config.authorFee) / 100000;
+        protocolFee = (poolAmount * config.protocolFee) / FEE_DENOMINATOR;
+        authorFee = (poolAmount * config.authorFee) / FEE_DENOMINATOR;
     }
 
     /**
@@ -196,11 +191,11 @@ contract ERC20MEMEV2 is
     function calculateValue(
         uint256 amount
     ) public view returns (uint256 _price) {
-        require(amount < type(uint128).max, "Amount too large"); 
+        require(amount < type(uint128).max, "Amount too large");
         _price =
             (amount / config.divider) +
             ((config.initialMintCost * amount) /
-                (config.initialSupply * 10000));
+                (config.initialSupply * INITIAL_SUPPLY_SCALE_FACTOR));
     }
 
     /**
@@ -249,4 +244,3 @@ contract ERC20MEMEV2 is
         _unpause();
     }
 }
-

@@ -2,7 +2,7 @@
 //
 // This software is licensed under the MIT License for non-commercial use only.
 // Commercial use requires a separate agreement with the author.
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.22;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -36,29 +36,34 @@ contract MemeFactory is
     /// @notice Emitted when a new meme token is created
     /// @param proxy Address of the created meme token proxy
     /// @param author Meme author address
-    event ERC20Created(address proxy, address author);
+    event ERC20Created(address indexed proxy, address indexed author);
 
     /// @notice Emitted when an ERC20 token is upgraded
     /// @param proxy Address of the upgraded token proxy
     /// @param newImplementation New implementation contract address
-    event ERC20Upgraded(address proxy, address newImplementation);
+    event ERC20Upgraded(
+        address indexed proxy,
+        address indexed newImplementation
+    );
 
     /// @notice Emitted when the configuration is updated
     /// @param newConfig New token configuration
-    event ConfigUpdated(Config.Token newConfig);
+    event ConfigUpdated(Config.Token indexed newConfig);
 
     /// @notice Emitted when protocol fees are withdrawn
     /// @param token Address of the token being withdrawn
     /// @param amount Amount of tokens withdrawn
-    event ProtocolFeeWithdrawn(address indexed token, uint256 amount);
+    event ProtocolFeeWithdrawn(address indexed token, uint256 indexed amount);
 
     /// @notice Emitted when the implementation address for ERC20 tokens is updated
     /// @param newImplementation New implementation contract address
-    event ERC20ImplementationUpdated(address newImplementation);
+    event ERC20ImplementationUpdated(address indexed newImplementation);
 
     /// @notice Emitted when the fee was collected from token pool
     /// @param token token address
-    event CollectedPoolFees(address token);
+    event CollectedPoolFees(address indexed token);
+
+    uint256 public constant FEE_DENOMINATOR = 100_000; // precision: 0.001%
 
     /// @notice An array of contracts created through the factory.
     address[] public memeListArray;
@@ -79,22 +84,22 @@ contract MemeFactory is
     /**
      * @notice Initializes the Factory with initial configuration for ERC20.
      * Called once during proxy deployment by OpenZeppelin Upgrades plugin. DO NOT call directly.
-     * @param initialImplementation_ Address of the initial implementation contract for ERC20 tokens
-     * @param config_ Factory and meme token configuration
+     * @param initialImplementation Address of the initial implementation contract for ERC20 tokens
+     * @param tokensConfig Factory and meme token configuration
      */
     function initialize(
-        address initialImplementation_,
-        Config.Token calldata config_
+        address initialImplementation,
+        Config.Token calldata tokensConfig
     ) public initializer {
         require(
-            initialImplementation_ != address(0),
+            initialImplementation != address(0),
             "Implementation must be not 0x0"
         );
         __Ownable_init(msg.sender);
         __Pausable_init();
         __ReentrancyGuard_init();
-        implementation = initialImplementation_;
-        config = config_;
+        implementation = initialImplementation;
+        config = tokensConfig;
     }
 
     /**
@@ -113,9 +118,9 @@ contract MemeFactory is
     }
 
     /// @notice Updates the for ERC20 tokens configuration
-    /// @param _config New configuration values
-    function updateConfig(Config.Token memory _config) external onlyOwner {
-        config = _config;
+    /// @param tokensConfig New configuration values
+    function updateConfig(Config.Token memory tokensConfig) external onlyOwner {
+        config = tokensConfig;
         emit ConfigUpdated(config);
     }
 
@@ -142,6 +147,8 @@ contract MemeFactory is
     /// @param symbol Symbol of the token
     /// @return Address of the newly created ERC20 token proxy
     /// @dev The token is created by the author, so in this method only the platform receives a commission.
+    // Reentrancy guarded via `nonReentrant` modifier
+    // slither-disable-next-line reentrancy-benign,reentrancy-events
     function createERC20(
         string memory name,
         string memory symbol
@@ -158,8 +165,10 @@ contract MemeFactory is
         );
         address proxyAddress = address(proxy);
 
+        memeListArray.push(proxyAddress);
+
         uint256 toPool = config.initialMintCost;
-        uint256 protocolFee = (toPool * config.protocolFee) / 100000;
+        uint256 protocolFee = (toPool * config.protocolFee) / FEE_DENOMINATOR;
         require(
             IERC20(config.pairedToken).allowance(msg.sender, address(this)) >=
                 (toPool + protocolFee),
@@ -176,8 +185,6 @@ contract MemeFactory is
             proxyAddress,
             toPool
         );
-
-        memeListArray.push(proxyAddress);
 
         require(
             IERC20MEME(proxyAddress).pool() == address(0),
@@ -202,11 +209,14 @@ contract MemeFactory is
     /// @notice Updates the implementation contract for a batch of tokens
     /// @param startIndex Start index of memeListArray
     /// @param batchSize batch size for memeListArray
+    // Reentrancy guarded via `nonReentrant` modifier
+    // slither-disable-next-line reentrancy-events
     function updateTokensBatch(
         uint256 startIndex,
         uint256 batchSize
-    ) external onlyOwner {
+    ) external nonReentrant onlyOwner {
         require(startIndex < memeListArray.length, "Invalid startIndex");
+        address newProxyImplementation = implementation;
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
         if (endIndex > length) {
@@ -215,13 +225,16 @@ contract MemeFactory is
 
         for (uint256 i = startIndex; i < endIndex; i++) {
             address proxy = memeListArray[i];
+            // External upgrade inside a controlled loop with capped batchSize.
+            // We acknowledge the risk and control gas usage via external batch processing.
+            // slither-disable-next-line calls-loop
             try
                 ITransparentUpgradeableProxy(payable(proxy)).upgradeToAndCall(
-                    implementation,
+                    newProxyImplementation,
                     ""
                 )
             {
-                emit ERC20Upgraded(proxy, implementation);
+                emit ERC20Upgraded(proxy, newProxyImplementation);
             } catch {
                 emit ERC20Upgraded(proxy, address(0));
             }
@@ -229,10 +242,25 @@ contract MemeFactory is
     }
 
     /// @notice Collects pool fees from all token
-    function collectPoolsFees() external onlyOwner {
+    // Reentrancy guarded via `nonReentrant` modifier
+    // slither-disable-next-line reentrancy-events
+    function collectPoolsFees(
+        uint256 startIndex,
+        uint256 batchSize
+    ) external nonReentrant onlyOwner {
+        require(startIndex < memeListArray.length, "Invalid startIndex");
         uint256 length = memeListArray.length;
-        for (uint256 i = 0; i < length; i++) {
-            try IERC20MEME(memeListArray[i]).collectPoolFees() {
+        uint256 endIndex = startIndex + batchSize;
+        if (endIndex > length) {
+            endIndex = length;
+        }
+
+        for (uint256 i = startIndex; i < endIndex; i++) {
+            address token = memeListArray[i];
+            // External collectPoolFees inside a controlled loop with capped batchSize.
+            // We acknowledge the risk and control gas usage via external batch processing.
+            // slither-disable-next-line calls-loop
+            try IERC20MEME(token).collectPoolFees() {
                 emit CollectedPoolFees(memeListArray[i]);
             } catch {}
         }
@@ -241,8 +269,8 @@ contract MemeFactory is
     /// @notice Collects pool fees from meme token
     /// @param meme Address of the meme token
     function collectPoolFees(address meme) external {
-        IERC20MEME(meme).collectPoolFees();
         emit CollectedPoolFees(meme);
+        IERC20MEME(meme).collectPoolFees();
     }
 
     /**
@@ -267,7 +295,7 @@ contract MemeFactory is
     function pauseTokensBatch(
         uint256 startIndex,
         uint256 batchSize
-    ) external onlyOwner {
+    ) external nonReentrant onlyOwner {
         require(startIndex < memeListArray.length, "Invalid startIndex");
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
@@ -277,6 +305,9 @@ contract MemeFactory is
 
         for (uint256 i = startIndex; i < endIndex; i++) {
             address token = memeListArray[i];
+            // External pause inside a controlled loop with capped batchSize.
+            // We acknowledge the risk and control gas usage via external batch processing.
+            // slither-disable-next-line calls-loop
             IERC20MEME(token).pause();
         }
     }
@@ -289,7 +320,7 @@ contract MemeFactory is
     function unpauseTokensBatch(
         uint256 startIndex,
         uint256 batchSize
-    ) external onlyOwner {
+    ) external nonReentrant onlyOwner {
         require(startIndex < memeListArray.length, "Invalid startIndex");
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
@@ -299,7 +330,15 @@ contract MemeFactory is
 
         for (uint256 i = startIndex; i < endIndex; i++) {
             address token = memeListArray[i];
+            // External unpause inside a controlled loop with capped batchSize.
+            // We acknowledge the risk and control gas usage via external batch processing.
+            // slither-disable-next-line calls-loop
             IERC20MEME(token).unpause();
         }
+    }
+
+    /// @notice Returns the number of meme tokens created
+    function memeListArrayLength() external view returns (uint256) {
+        return memeListArray.length;
     }
 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.22;
+import "../config.sol";
 
 interface IERC20MEME {
     /// @notice Emitted when new tokens are minted.
@@ -10,7 +11,7 @@ interface IERC20MEME {
     event Mint(
         address indexed to,
         uint256 amount,
-        uint256 poolAmount,
+        uint256 indexed poolAmount,
         uint256 protocolFee
     );
 
@@ -19,20 +20,58 @@ interface IERC20MEME {
     /// @param amount Amount of tokens burned.
     event Burn(address indexed from, uint256 amount);
 
+    // @notice Precision denominator for fee calculations (0.001%)
+    // slither-disable-next-line naming-convention
+    function FEE_DENOMINATOR() external pure returns (uint256);
+
+    /// @notice Precision denominator for fee calculations (0.001%)
+    // slither-disable-next-line naming-convention
+    function INITIAL_SUPPLY_SCALE_FACTOR() external pure returns (uint256);
+
+    /// @notice Const for Uniswapv3 calculations
+    // slither-disable-next-line naming-convention
+    function MIN_SQRT_RATIO() external pure returns (uint256);
+
+    /// @notice Const for Uniswapv3 calculations
+    // slither-disable-next-line naming-convention
+    function MAX_SQRT_RATIO() external pure returns (uint256);
+
+    /// @notice Returns the address of token author
+    function author() external view returns (address);
+
+    /// @notice Returns the total minted tokens
+    function totalMinted() external view returns (uint256);
+
+    /// @notice Returns the address of the Uniswap V3 pool used by this contract.
+    function pool() external view returns (address);
+
+    /// @notice Returns the address of the token paired in the liquidity pool.
+    function poolToken() external view returns (address);
+
+    /// @notice The configuration parameters used for pool and liquidity management.
+    /// @return The current token configuration
+    function config() external view returns (Config.Token memory);
+
+    /// @notice Returns the lower tick boundary for the liquidity position.
+    function tickLower() external view returns (int24);
+
+    /// @notice Returns the upper tick boundary for the liquidity position.
+    function tickUpper() external view returns (int24);
+
     /**
      * @notice Initializes the ERC20MEME contract.
      * @dev Can only be called once due to the `initializer` modifier.
      * Sets the token name, symbol, and initializes inherited upgradeable contracts.
-     * @param name The name of the token.
-     * @param symbol The symbol of the token.
-     * @param pairedToken_ The address of the paired token for liquidity.
-     * @param author_ The address of the paired token for liquidity.
+     * @param memeName The name of the token.
+     * @param memeSymbol The symbol of the token.
+     * @param poolTokenAddr The address of the paired token for liquidity.
+     * @param user The address of the paired token for liquidity.
      */
     function initialize(
-        string memory name,
-        string memory symbol,
-        address pairedToken_,
-        address author_
+        string memory memeName,
+        string memory memeSymbol,
+        address poolTokenAddr,
+        address user
     ) external;
 
     /**
@@ -87,10 +126,14 @@ interface IERC20MEME {
      */
     function collectPoolFees() external;
 
-    ///@notice Pause mint from factory
+    /**
+     * @notice Pause mint from factory
+     */
     function pause() external;
 
-    /// @notice Unpause mint from factory
+    /**
+     * @notice Unpause mint from factory
+     */
     function unpause() external;
 
     /// @notice Creates and initializes the liquidity pool if it has not been initialized yet.
@@ -116,42 +159,5 @@ interface IERC20MEME {
     ) external;
 
     /// @notice Returns the token pair addresses in the correct order for Uniswap V3.
-    function getTokens() external;
-
-    /// @notice Returns the address of token author
-    function author() external view returns (address);
-
-    /// @notice Returns the total minted tokens
-    function totalMinted() external view returns (uint256);
-
-    /// @notice Returns the address of the Uniswap V3 pool used by this contract.
-    function pool() external view returns (address);
-
-    /// @notice Returns the address of the token paired in the liquidity pool.
-    function pairedToken() external view returns (address);
-
-    /// @notice Returns the configuration parameters for pool and liquidity management.
-    function config()
-        external
-        view
-        returns (
-            address factory,
-            address pairedToken,
-            address getLiquidity,
-            uint256 initialSupply,
-            uint256 initialMintCost,
-            uint24 fee,
-            int24 tickSpacing,
-            int24 minTick,
-            int24 maxTick,
-            uint256 protocolFee,
-            uint256 authorFee,
-            uint256 divider
-        );
-
-    /// @notice Returns the lower tick boundary for the liquidity position.
-    function tickLower() external view returns (int24);
-
-    /// @notice Returns the upper tick boundary for the liquidity position.
-    function tickUpper() external view returns (int24);
+    function getTokens() external view returns (address token0, address token1);
 }

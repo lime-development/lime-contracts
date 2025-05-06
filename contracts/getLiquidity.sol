@@ -2,20 +2,26 @@
 //
 // This software is licensed under the MIT License for non-commercial use only.
 // Commercial use requires a separate agreement with the author.
+
+// This pragma version is intentionally fixed to 0.7.6 to maintain compatibility
+// with Uniswap V3 core and periphery libraries, which were originally written
+// for Solidity 0.7.x. This contract is not intended to be upgraded to 0.8.x
+// to preserve compatibility with these dependencies.
+// slither-disable-start solc-version
 pragma solidity =0.7.6;
 
 import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import "@uniswap/v3-periphery/contracts/libraries/LiquidityAmounts.sol";
 
 /**
- * @title getLiquidityHelper
+ * @title GetLiquidityHelper
  * @dev Helper contract for calculating liquidity in Uniswap V3.
  * This contract serves as an intermediary for utilizing TickMath.sol
  * and LiquidityAmounts.sol from Uniswap V3. It simplifies the process
  * of computing liquidity and relevant values for Uniswap V3 pools.
  * @author Vorobev Sergei
  */
-contract getLiquidityHelper {
+contract GetLiquidityHelper {
     /**
      * @notice Computes the integer square root of a number.
      * @dev Uses Newton's method (binary search) for an approximate sqrt(x) calculation.
@@ -82,3 +88,4 @@ contract getLiquidityHelper {
         );
     }
 }
+// slither-disable-end solc-version

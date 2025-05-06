@@ -2,13 +2,13 @@ const { expect } = require("chai");
 const { MaxUint256 } = require("ethers");
 const { ethers, upgrades } = require("hardhat");
 const { poolConfig, networks } = require("../scripts/config");
-const { getERC20Created,setupNetwork, getWRAP} = require("../scripts/helper");
+const { getERC20Created, setupNetwork, getWRAP } = require("../scripts/helper");
 
 let owner, config;
 
 before(async function () {
-  
-  [owner,second] = await ethers.getSigners();
+
+  [owner, second] = await ethers.getSigners();
   const ContractMeme = await ethers.getContractFactory("ERC20MEME");
   meme = await ContractMeme.deploy();
   await meme.waitForDeployment();
@@ -71,7 +71,7 @@ describe("Test MemeFactory", function () {
     expect(await newMEME.balanceOf(owner)).to.equal(amount * Try);
     const balanceBefore = await wrapedToken.balanceOf(await factory.getAddress());
     await factory.collectPoolFees(await newMEME.getAddress());
-    await factory.collectPoolsFees();
+    await factory.collectPoolsFees(0, 1000);
     const balanceAfter = await wrapedToken.balanceOf(await factory.getAddress());
     expect(balanceAfter).to.be.gt(balanceBefore);
   });
@@ -96,7 +96,7 @@ describe("Test MemeFactory", function () {
     await tx2.wait();
     expect(await factory.implementation()).to.equal(await meme_v2.getAddress());
 
-    const tx3 = await factory.updateTokensBatch(0,1000);
+    const tx3 = await factory.updateTokensBatch(0, 1000);
     await tx3.wait();
 
     const value_v2 = await mem_v1.calculateValue(10000);
