@@ -5,3 +5,4 @@
 .env
 /.openzeppelin
 /docs/contracts/test
+package-lock.json

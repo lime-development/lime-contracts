@@ -2,7 +2,7 @@
 //
 // This software is licensed under the MIT License for non-commercial use only.
 // Commercial use requires a separate agreement with the author.
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.22;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -13,7 +13,7 @@ import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Po
 import {IV3SwapRouter} from "@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol";
 
 import {Config} from "./config.sol";
-import {igetLiquidity} from "./interfaces/igetLiqudity.sol";
+import {IGetLiquidity} from "./interfaces/IGetLiquidity.sol";
 
 contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     using SafeERC20 for IERC20;
@@ -22,17 +22,21 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @param token0 The address of the token0 token in the pool.
     /// @param token1 The address of the token1 token in the pool.
     /// @param pool The address of the created pool.
-    event PoolCreated(address token0, address token1, address pool);
+    event PoolCreated(
+        address indexed token0,
+        address indexed token1,
+        address indexed pool
+    );
 
     /// @notice Emitted when the pool is initialized with a paired token.
     /// @param pairedToken The address of the paired token.
     /// @param pool The address of the initialized pool.
-    event TokenInitialized(address pairedToken, address pool);
+    event TokenInitialized(address indexed pairedToken, address indexed pool);
 
     /// @notice Emitted when the initial price of the pool is set.
     /// @param pool The address of the pool.
     /// @param sqrtPriceX96 The square root price in X96 format.
-    event PriceSetuped(address pool, uint160 sqrtPriceX96);
+    event PriceSetuped(address indexed pool, uint160 indexed sqrtPriceX96);
 
     /// @notice Emitted when a token swap occurs.
     /// @param tokenIn The address of the input token.
@@ -40,9 +44,9 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @param tokenOut The address of the output token.
     /// @param amountOut The amount of output tokens received.
     event Swapped(
-        address tokenIn,
+        address indexed tokenIn,
         uint256 amountIn,
-        address tokenOut,
+        address indexed tokenOut,
         uint256 amountOut
     );
 
@@ -52,9 +56,9 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @param token1 The address of the token1 token.
     /// @param amount1 The amount of the token1 token added.
     event AddedLiquidity(
-        address token0,
+        address indexed token0,
         uint256 amount0,
-        address token1,
+        address indexed token1,
         uint256 amount1
     );
 
@@ -63,11 +67,17 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @param amount1 The amount of the token1 token collected as fees.
     event CollectedPoolFees(uint256 amount0, uint256 amount1);
 
+    /// @notice Const for Uniswapv3 calculations
+    uint160 public constant MIN_SQRT_RATIO = 4295128739;
+    /// @notice Const for Uniswapv3 calculations
+    uint160 public constant MAX_SQRT_RATIO =
+        1461446703485210103287273052203988822378723970342;
+
     /// @notice The address of the Uniswap V3 pool associated with this contract.
     address public pool;
 
     /// @notice The address of the token paired with this contract's token in the liquidity pool.
-    address public pairedToken;
+    address public poolToken;
 
     /// @notice The configuration parameters used for pool and liquidity management.
     Config.Token public config;
@@ -78,15 +88,16 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     int24 tickUpper;
 
     /// @notice Initializes the contract with the paired token and configuration.
-    /// @param _pairedToken The address of the token with which the pool is to be created.
-    /// @param _config The configuration structure containing pool settings.
+    /// @param poolTokenAddr The address of the token with which the pool is to be created.
+    /// @param tokenConfig The configuration structure containing pool settings.
+    // slither-disable-next-line naming-convention
     function __ERC20PoolV3_init(
-        address _pairedToken,
-        Config.Token memory _config
+        address poolTokenAddr,
+        Config.Token memory tokenConfig
     ) internal onlyInitializing {
         __Ownable_init(msg.sender);
-        pairedToken = _pairedToken;
-        config = _config;
+        poolToken = poolTokenAddr;
+        config = tokenConfig;
         // The lower tick for the liquidity position, rounded down to the nearest multiple of the tick spacing.
         // The rounding is intentional
         // slither-disable-next-line divide-before-multiply
@@ -104,15 +115,17 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
 
     /// @notice Creates and initializes the liquidity pool if it has not been initialized yet.
     /// @dev The function is separated from __ERC20PoolV3_init to perform approval on the contract address after Init.
+    // slither-disable-next-line reentrancy-events
     function initializePool() public onlyOwner {
         require(pool == address(0), "Pool already initialized");
         createPool();
         setupPrice();
         addLiquidity();
-        emit TokenInitialized(pairedToken, pool);
+        emit TokenInitialized(poolToken, pool);
     }
 
     /// @notice Creates a Uniswap V3 liquidity pool if it does not exist.
+    // slither-disable-next-line reentrancy-events
     function createPool() internal {
         (address token0, address token1) = getTokens();
 
@@ -133,6 +146,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     }
 
     /// @notice Sets the initial price for the liquidity pool base on token balanceOf on this address
+    // slither-disable-next-line reentrancy-events
     function setupPrice() internal {
         require(pool != address(0), "Pool must exist");
 
@@ -150,7 +164,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         require(!unlocked, "Pool is unlocked before initialize");
 
         if (sqrtPriceX96 == 0) {
-            sqrtPriceX96 = igetLiquidity(config.getLiquidity).getSqrtPriceX96(
+            sqrtPriceX96 = IGetLiquidity(config.getLiquidity).getSqrtPriceX96(
                 amount1,
                 amount0
             );
@@ -181,6 +195,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @param tokenIn The address of the token to swap from.
     /// @param amount The amount of the input token to swap.
     /// @param minAmountOut The minium amount of the out token from swap.
+    // slither-disable-next-line reentrancy-events
     function swap(
         address tokenIn,
         uint256 amount,
@@ -195,13 +210,10 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         IERC20(tokenIn).safeIncreaseAllowance(pool, amount);
 
         address tokenOut = (tokenIn == address(this))
-            ? pairedToken
+            ? poolToken
             : address(this);
 
         bool zeroForOne = tokenIn < tokenOut;
-
-        uint160 MIN_SQRT_RATIO = 4295128739;
-        uint160 MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
         uint160 sqrtPriceLimitX96 = zeroForOne
             ? MIN_SQRT_RATIO + 1
@@ -258,7 +270,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         require(unlocked, "Pool is locked");
 
         uint256 liquidity = IUniswapV3Pool(pool).liquidity();
-        uint128 liquidityIn = igetLiquidity(config.getLiquidity).getLiquidity(
+        uint128 liquidityIn = IGetLiquidity(config.getLiquidity).getLiquidity(
             amount0,
             amount1,
             sqrtPriceX96,
@@ -293,7 +305,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         uint256 amount0,
         uint256 amount1,
         bytes calldata data
-    ) public {
+    ) external {
         require(msg.sender == pool, "Callback must be from pool");
         (address token0, address token1) = abi.decode(data, (address, address));
         IERC20(token0).safeTransfer(msg.sender, amount0);
@@ -303,12 +315,13 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
 
     /// @notice Returns the token pair addresses in the correct order for Uniswap V3.
     function getTokens() public view returns (address token0, address token1) {
-        (token0, token1) = address(this) < pairedToken
-            ? (address(this), pairedToken)
-            : (pairedToken, address(this));
+        (token0, token1) = address(this) < poolToken
+            ? (address(this), poolToken)
+            : (poolToken, address(this));
     }
 
     /// @notice Collects accumulated trading fees from the liquidity pool.
+    // slither-disable-next-line reentrancy-events
     function _collectPoolFees()
         internal
         returns (uint256 amount0, uint256 amount1)
