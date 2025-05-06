@@ -1,20 +1,15 @@
 ---
 layout: default
-title: GetLiquidity
+title: IGetLiquidity
 ---
 # Solidity API
 
-## GetLiquidityHelper
-
-_Helper contract for calculating liquidity in Uniswap V3.
-This contract serves as an intermediary for utilizing TickMath.sol
-and LiquidityAmounts.sol from Uniswap V3. It simplifies the process
-of computing liquidity and relevant values for Uniswap V3 pools._
+## IGetLiquidity
 
 ### sqrt
 
 ```solidity
-function sqrt(uint256 x) public pure returns (uint256)
+function sqrt(uint256 x) external pure returns (uint256)
 ```
 
 Computes the integer square root of a number.
@@ -36,7 +31,7 @@ _Uses Newton's method (binary search) for an approximate sqrt(x) calculation._
 ### getSqrtPriceX96
 
 ```solidity
-function getSqrtPriceX96(uint256 amountToken1, uint256 amountToken0) public pure returns (uint160)
+function getSqrtPriceX96(uint256 amountToken1, uint256 amountToken0) external pure returns (uint160)
 ```
 
 Calculates sqrtPriceX96 based on token reserves.

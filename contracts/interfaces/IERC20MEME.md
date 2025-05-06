@@ -38,10 +38,102 @@ Emitted when tokens are burned.
 | from | address | Address from which tokens were burned. |
 | amount | uint256 | Amount of tokens burned. |
 
+### FEE_DENOMINATOR
+
+```solidity
+function FEE_DENOMINATOR() external pure returns (uint256)
+```
+
+### INITIAL_SUPPLY_SCALE_FACTOR
+
+```solidity
+function INITIAL_SUPPLY_SCALE_FACTOR() external pure returns (uint256)
+```
+
+Precision denominator for fee calculations (0.001%)
+
+### MIN_SQRT_RATIO
+
+```solidity
+function MIN_SQRT_RATIO() external pure returns (uint256)
+```
+
+Const for Uniswapv3 calculations
+
+### MAX_SQRT_RATIO
+
+```solidity
+function MAX_SQRT_RATIO() external pure returns (uint256)
+```
+
+Const for Uniswapv3 calculations
+
+### author
+
+```solidity
+function author() external view returns (address)
+```
+
+Returns the address of token author
+
+### totalMinted
+
+```solidity
+function totalMinted() external view returns (uint256)
+```
+
+Returns the total minted tokens
+
+### pool
+
+```solidity
+function pool() external view returns (address)
+```
+
+Returns the address of the Uniswap V3 pool used by this contract.
+
+### poolToken
+
+```solidity
+function poolToken() external view returns (address)
+```
+
+Returns the address of the token paired in the liquidity pool.
+
+### config
+
+```solidity
+function config() external view returns (struct Config.Token)
+```
+
+The configuration parameters used for pool and liquidity management.
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | struct Config.Token | The current token configuration |
+
+### tickLower
+
+```solidity
+function tickLower() external view returns (int24)
+```
+
+Returns the lower tick boundary for the liquidity position.
+
+### tickUpper
+
+```solidity
+function tickUpper() external view returns (int24)
+```
+
+Returns the upper tick boundary for the liquidity position.
+
 ### initialize
 
 ```solidity
-function initialize(string name, string symbol, address pairedToken_, address author_) external
+function initialize(string memeName, string memeSymbol, address poolTokenAddr, address user) external
 ```
 
 Initializes the ERC20MEME contract.
@@ -53,10 +145,10 @@ Sets the token name, symbol, and initializes inherited upgradeable contracts._
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| name | string | The name of the token. |
-| symbol | string | The symbol of the token. |
-| pairedToken_ | address | The address of the paired token for liquidity. |
-| author_ | address | The address of the paired token for liquidity. |
+| memeName | string | The name of the token. |
+| memeSymbol | string | The symbol of the token. |
+| poolTokenAddr | address | The address of the paired token for liquidity. |
+| user | address | The address of the paired token for liquidity. |
 
 ### decimals
 
@@ -221,64 +313,8 @@ Callback for UniswapV3Pool mint
 ### getTokens
 
 ```solidity
-function getTokens() external
+function getTokens() external view returns (address token0, address token1)
 ```
 
 Returns the token pair addresses in the correct order for Uniswap V3.
-
-### author
-
-```solidity
-function author() external view returns (address)
-```
-
-Returns the address of token author
-
-### totalMinted
-
-```solidity
-function totalMinted() external view returns (uint256)
-```
-
-Returns the total minted tokens
-
-### pool
-
-```solidity
-function pool() external view returns (address)
-```
-
-Returns the address of the Uniswap V3 pool used by this contract.
-
-### pairedToken
-
-```solidity
-function pairedToken() external view returns (address)
-```
-
-Returns the address of the token paired in the liquidity pool.
-
-### config
-
-```solidity
-function config() external view returns (address factory, address pairedToken, address getLiquidity, uint256 initialSupply, uint256 initialMintCost, uint24 fee, int24 tickSpacing, int24 minTick, int24 maxTick, uint256 protocolFee, uint256 authorFee, uint256 divider)
-```
-
-Returns the configuration parameters for pool and liquidity management.
-
-### tickLower
-
-```solidity
-function tickLower() external view returns (int24)
-```
-
-Returns the lower tick boundary for the liquidity position.
-
-### tickUpper
-
-```solidity
-function tickUpper() external view returns (int24)
-```
-
-Returns the upper tick boundary for the liquidity position.
 

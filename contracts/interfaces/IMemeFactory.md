@@ -71,7 +71,7 @@ Emitted when protocol fees are withdrawn
 event ERC20ImplementationUpdated(address newImplementation)
 ```
 
-Emitted when the implementation address is updated
+Emitted when the implementation address for ERC20 tokens is updated
 
 #### Parameters
 
@@ -93,10 +93,48 @@ Emitted when the fee was collected from token pool
 | ---- | ---- | ----------- |
 | token | address | token address |
 
+### FEE_DENOMINATOR
+
+```solidity
+function FEE_DENOMINATOR() external pure returns (uint256)
+```
+
+Precision denominator for fee calculations (0.001%)
+
+### memeListArray
+
+```solidity
+function memeListArray(uint256 index) external view returns (address)
+```
+
+Returns the address of a meme token at the given index in the list.
+
+### implementation
+
+```solidity
+function implementation() external pure returns (address)
+```
+
+Address the current implementation contract for ERC20 contracts.
+
+### config
+
+```solidity
+function config() external view returns (struct Config.Token)
+```
+
+Returns the current configuration for ERC20 tokens
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | struct Config.Token | The current token configuration |
+
 ### initialize
 
 ```solidity
-function initialize(address initialImplementation_, struct Config.Token config_) external
+function initialize(address initialImplementation, struct Config.Token tokensConfig) external
 ```
 
 Initializes the Factory with initial configuration for ERC20.
@@ -106,8 +144,8 @@ Called once during proxy deployment by OpenZeppelin Upgrades plugin. DO NOT call
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| initialImplementation_ | address | Address of the initial implementation contract |
-| config_ | struct Config.Token | Factory and meme token configuration |
+| initialImplementation | address | Address of the initial implementation contract for ERC20 tokens |
+| tokensConfig | struct Config.Token | Factory and meme token configuration |
 
 ### getConfig
 
@@ -126,7 +164,7 @@ Returns the current configuration for ERC20 tokens
 ### updateConfig
 
 ```solidity
-function updateConfig(struct Config.Token _config) external
+function updateConfig(struct Config.Token tokensConfig) external
 ```
 
 Updates the for ERC20 tokens configuration
@@ -135,7 +173,7 @@ Updates the for ERC20 tokens configuration
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _config | struct Config.Token | New configuration values |
+| tokensConfig | struct Config.Token | New configuration values |
 
 ### withdrawProcotolFee
 
@@ -208,7 +246,7 @@ Updates the implementation contract for a batch of tokens
 ### collectPoolsFees
 
 ```solidity
-function collectPoolsFees() external
+function collectPoolsFees(uint256 startIndex, uint256 batchSize) external
 ```
 
 Collects pool fees from all token
@@ -273,27 +311,11 @@ Unpause token batch
 | startIndex | uint256 | Start index of memeListArray |
 | batchSize | uint256 | batch size for memeListArray |
 
-### config
+### memeListArrayLength
 
 ```solidity
-function config() external view returns (address factory, address pairedToken, address getLiquidity, uint256 initialSupply, uint256 initialMintCost, uint24 fee, int24 tickSpacing, int24 minTick, int24 maxTick, uint256 protocolFee, uint256 authorFee, uint256 divider)
+function memeListArrayLength() external view returns (uint256)
 ```
 
-Returns the configuration parameters for pool and liquidity management.
-
-### memeListArray
-
-```solidity
-function memeListArray(uint256 index) external view returns (address)
-```
-
-Returns the address of a meme token at the given index in the list.
-
-### implementation
-
-```solidity
-function implementation() external view returns (address)
-```
-
-Returns the address of implementation.
+Returns the number of meme tokens created
 

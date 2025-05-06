@@ -17,7 +17,8 @@
 ## interfaces
 - [IWETH9](contracts/interfaces/IWETH9)
 - [igetLiqudity](contracts/interfaces/igetLiqudity)
+- [IGetLiquidity](contracts/interfaces/IGetLiquidity)
 - [IERC20MEME](contracts/interfaces/IERC20MEME)
 - [IMemeFactory](contracts/interfaces/IMemeFactory)
 
-_Updated at 2025-04-30 02:23:48_
+_Updated at 2025-05-06 01:10:57_
