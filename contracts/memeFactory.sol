@@ -93,7 +93,7 @@ contract MemeFactory is
     ) public initializer {
         require(
             initialImplementation != address(0),
-            "Implementation must be not 0x0"
+            "F0"
         );
         __Ownable_init(msg.sender);
         __Pausable_init();
@@ -134,7 +134,7 @@ contract MemeFactory is
         IERC20 token = IERC20(tokenAddress);
         require(
             token.balanceOf(address(this)) >= amount,
-            "Insufficient balance"
+            "F1"
         );
 
         token.safeTransfer(owner(), amount);
@@ -172,7 +172,7 @@ contract MemeFactory is
         require(
             IERC20(config.pairedToken).allowance(msg.sender, address(this)) >=
                 (toPool + protocolFee),
-            "Insufficient allowance"
+            "F2"
         );
 
         IERC20(config.pairedToken).safeTransferFrom(
@@ -188,7 +188,7 @@ contract MemeFactory is
 
         require(
             IERC20MEME(proxyAddress).pool() == address(0),
-            "Pool already initialized"
+            "F3"
         );
         IERC20MEME(proxyAddress).initializePool();
 
@@ -201,7 +201,7 @@ contract MemeFactory is
     function updateImplementation(
         address newImplementation
     ) external onlyOwner {
-        require(newImplementation.code.length > 0, "Invalid implementation");
+        require(newImplementation.code.length > 0, "F4");
         implementation = newImplementation;
         emit ERC20ImplementationUpdated(implementation);
     }
@@ -215,7 +215,7 @@ contract MemeFactory is
         uint256 startIndex,
         uint256 batchSize
     ) external nonReentrant onlyOwner {
-        require(startIndex < memeListArray.length, "Invalid startIndex");
+        require(startIndex < memeListArray.length, "F5");
         address newProxyImplementation = implementation;
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
@@ -248,7 +248,7 @@ contract MemeFactory is
         uint256 startIndex,
         uint256 batchSize
     ) external nonReentrant onlyOwner {
-        require(startIndex < memeListArray.length, "Invalid startIndex");
+        require(startIndex < memeListArray.length, "F6");
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
         if (endIndex > length) {
@@ -296,7 +296,7 @@ contract MemeFactory is
         uint256 startIndex,
         uint256 batchSize
     ) external nonReentrant onlyOwner {
-        require(startIndex < memeListArray.length, "Invalid startIndex");
+        require(startIndex < memeListArray.length, "F7");
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
         if (endIndex > length) {
@@ -321,7 +321,7 @@ contract MemeFactory is
         uint256 startIndex,
         uint256 batchSize
     ) external nonReentrant onlyOwner {
-        require(startIndex < memeListArray.length, "Invalid startIndex");
+        require(startIndex < memeListArray.length, "F8");
         uint256 length = memeListArray.length;
         uint256 endIndex = startIndex + batchSize;
         if (endIndex > length) {
