@@ -50,10 +50,7 @@ contract GetLiquidityHelper {
         uint256 amountToken1,
         uint256 amountToken0
     ) public pure returns (uint160) {
-        require(
-            amountToken0 > 0 && amountToken1 > 0,
-            "Amounts must be positive"
-        );
+        require(amountToken0 > 0 && amountToken1 > 0, "L0");
         uint256 price = (amountToken1 * 1e18) / amountToken0; // price in token1/token0
         uint256 sqrtPrice = sqrt(price);
         return uint160((sqrtPrice * (1 << 96)) / 1e9); // Adjust for precision

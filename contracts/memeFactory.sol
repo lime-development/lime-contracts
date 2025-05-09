@@ -91,10 +91,7 @@ contract MemeFactory is
         address initialImplementation,
         Config.Token calldata tokensConfig
     ) public initializer {
-        require(
-            initialImplementation != address(0),
-            "F0"
-        );
+        require(initialImplementation != address(0), "F0");
         __Ownable_init(msg.sender);
         __Pausable_init();
         __ReentrancyGuard_init();
@@ -132,10 +129,7 @@ contract MemeFactory is
         uint256 amount
     ) external onlyOwner {
         IERC20 token = IERC20(tokenAddress);
-        require(
-            token.balanceOf(address(this)) >= amount,
-            "F1"
-        );
+        require(token.balanceOf(address(this)) >= amount, "F1");
 
         token.safeTransfer(owner(), amount);
         emit ProtocolFeeWithdrawn(tokenAddress, amount);
@@ -186,10 +180,6 @@ contract MemeFactory is
             toPool
         );
 
-        require(
-            IERC20MEME(proxyAddress).pool() == address(0),
-            "F3"
-        );
         IERC20MEME(proxyAddress).initializePool();
 
         emit ERC20Created(proxyAddress, msg.sender);
