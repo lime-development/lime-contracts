@@ -117,7 +117,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @dev The function is separated from __ERC20PoolV3_init to perform approval on the contract address after Init.
     // slither-disable-next-line reentrancy-events
     function initializePool() public onlyOwner {
-        require(pool == address(0), "Pool already initialized");
+        require(pool == address(0), "P0");
         createPool();
         setupPrice();
         addLiquidity();
@@ -140,7 +140,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
                 token1,
                 config.pool.fee
             );
-            require(pool != address(0), "Pool creation failed");
+            require(pool != address(0), "P1");
         }
         emit PoolCreated(token0, token1, pool);
     }
@@ -148,12 +148,12 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
     /// @notice Sets the initial price for the liquidity pool base on token balanceOf on this address
     // slither-disable-next-line reentrancy-events
     function setupPrice() internal {
-        require(pool != address(0), "Pool must exist");
+        require(pool != address(0), "P2");
 
         (address token0, address token1) = getTokens();
         uint256 amount0 = IERC20(token0).balanceOf(address(this));
         uint256 amount1 = IERC20(token1).balanceOf(address(this));
-        require(amount0 > 0 && amount1 > 0, "Both tokens must have balance");
+        require(amount0 > 0 && amount1 > 0, "P3");
 
         // Only sqrtPriceX96 and unlocked are used here, the other parameters like
         // tick, observationIndex, observationCardinality, observationCardinalityNext, and feeProtocol
@@ -161,7 +161,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         // slither-disable-next-line unused-return
         (uint160 sqrtPriceX96, , , , , , bool unlocked) = IUniswapV3Pool(pool)
             .slot0();
-        require(!unlocked, "Pool is unlocked before initialize");
+        require(!unlocked, "P4");
 
         if (sqrtPriceX96 == 0) {
             sqrtPriceX96 = IGetLiquidity(config.getLiquidity).getSqrtPriceX96(
@@ -183,10 +183,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
                 ,
                 bool newUnlocked
             ) = IUniswapV3Pool(pool).slot0();
-            require(
-                newSqrtPriceX96 != 0 && newUnlocked,
-                "Pool initialization failed"
-            );
+            require(newSqrtPriceX96 != 0 && newUnlocked, "P5");
         }
         emit PriceSetuped(pool, sqrtPriceX96);
     }
@@ -201,11 +198,8 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         uint256 amount,
         uint256 minAmountOut
     ) internal returns (uint256 amountOut) {
-        require(pool != address(0), "Pool must be created");
-        require(
-            IERC20(tokenIn).balanceOf(address(this)) >= amount,
-            "Insufficient balance for swap"
-        );
+        require(pool != address(0), "P6");
+        require(IERC20(tokenIn).balanceOf(address(this)) >= amount, "P7");
 
         IERC20(tokenIn).safeIncreaseAllowance(pool, amount);
 
@@ -228,7 +222,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         );
 
         amountOut = uint256(zeroForOne ? -amount1Delta : -amount0Delta);
-        require(amountOut >= minAmountOut, "Slippage too high");
+        require(amountOut >= minAmountOut, "P8");
 
         emit Swapped(tokenIn, amount, tokenOut, amountOut);
         return amountOut;
@@ -251,12 +245,12 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
 
     /// @notice Adds liquidity to the Uniswap V3 pool.
     function addLiquidity() internal {
-        require(pool != address(0), "Pool must exist");
+        require(pool != address(0), "PA");
         (address token0, address token1) = getTokens();
 
         uint256 amount0 = IERC20(token0).balanceOf(address(this));
         uint256 amount1 = IERC20(token1).balanceOf(address(this));
-        require(amount0 > 0 && amount1 > 0, "Insufficient token balance");
+        require(amount0 > 0 && amount1 > 0, "PB");
 
         IERC20(token0).safeIncreaseAllowance(pool, amount0);
         IERC20(token1).safeIncreaseAllowance(pool, amount1);
@@ -267,7 +261,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         // slither-disable-next-line unused-return
         (uint160 sqrtPriceX96, , , , , , bool unlocked) = IUniswapV3Pool(pool)
             .slot0();
-        require(unlocked, "Pool is locked");
+        require(unlocked, "PC");
 
         uint256 liquidity = IUniswapV3Pool(pool).liquidity();
         uint128 liquidityIn = IGetLiquidity(config.getLiquidity).getLiquidity(
@@ -286,15 +280,9 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
             abi.encode(token0, token1)
         );
 
-        require(
-            (added0 > 0) && (added1 > 0),
-            "AddLiquidity failed - Added amount0 or amount1 is 0"
-        );
+        require((added0 > 0) && (added1 > 0), "PD");
 
-        require(
-            IUniswapV3Pool(pool).liquidity() > liquidity,
-            "AddLiquidity failed - liquidity didn't increase"
-        );
+        require(IUniswapV3Pool(pool).liquidity() > liquidity, "PE");
     }
 
     /// @notice Callback for UniswapV3Pool mint
@@ -306,7 +294,7 @@ contract ERC20PoolV3 is Initializable, OwnableUpgradeable {
         uint256 amount1,
         bytes calldata data
     ) external {
-        require(msg.sender == pool, "Callback must be from pool");
+        require(msg.sender == pool, "PF");
         (address token0, address token1) = abi.decode(data, (address, address));
         IERC20(token0).safeTransfer(msg.sender, amount0);
         IERC20(token1).safeTransfer(msg.sender, amount1);

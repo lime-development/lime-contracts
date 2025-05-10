@@ -89,7 +89,7 @@ contract ERC20MEME is
         address poolTokenAddr,
         address user
     ) public initializer {
-        require(poolTokenAddr != address(0), "poolToken must be not 0x0");
+        require(poolTokenAddr != address(0), "M0");
         __ERC20_init(memeName, memeSymbol);
         __Ownable_init(msg.sender);
         __ERC20Permit_init(memeName);
@@ -99,7 +99,7 @@ contract ERC20MEME is
         __ERC20PoolV3_init(poolTokenAddr, IMemeFactory(msg.sender).getConfig());
         _mint(address(this), config.initialSupply);
         totalMinted = config.initialSupply;
-        require(user != address(0), "user must be not 0x0");
+        require(user != address(0), "M1");
         author = user;
     }
 
@@ -129,10 +129,7 @@ contract ERC20MEME is
         ) = calculatePrice(amount);
         uint256 withdraw = poolAmount + protocolFee + authorFee;
 
-        require(
-            withdraw > 0,
-            "The withdrawAmount greater than zero is required for a mint."
-        );
+        require(withdraw > 0, "M2");
 
         IERC20(poolToken).safeTransferFrom(msg.sender, address(this), withdraw);
 
@@ -154,7 +151,7 @@ contract ERC20MEME is
      * @param amount The amount of tokens to burn.
      */
     function burn(uint256 amount) external whenNotPaused {
-        require(amount > 0, "Amount must be greater than zero.");
+        require(amount > 0, "M3");
         _burn(msg.sender, amount);
         emit Burn(msg.sender, amount);
     }
@@ -173,7 +170,7 @@ contract ERC20MEME is
         view
         returns (uint256 poolAmount, uint256 protocolFee, uint256 authorFee)
     {
-        require(amount > 0, "Amount must be greater than zero.");
+        require(amount > 0, "M4");
         poolAmount =
             calculateValue(totalMinted + amount) -
             calculateValue(totalMinted);
@@ -190,7 +187,7 @@ contract ERC20MEME is
     function calculateValue(
         uint256 amount
     ) public view returns (uint256 _price) {
-        require(amount < type(uint128).max, "Amount too large");
+        require(amount < type(uint128).max, "M5");
         _price =
             ((amount ** 2) / config.divider) +
             ((config.initialMintCost * amount) /
@@ -207,7 +204,7 @@ contract ERC20MEME is
         (uint256 amount0, uint256 amount1) = _collectPoolFees();
         (address token0, address token1) = getTokens();
 
-        require(((amount0 > 0) || (amount1 > 0)), "Amount must be not 0");
+        require(((amount0 > 0) || (amount1 > 0)), "M6");
 
         uint256 authorAmount0 = (amount0 * config.authorFee) /
             (config.protocolFee + config.authorFee);

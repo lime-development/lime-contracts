@@ -3,6 +3,7 @@ const { MaxUint256 } = require("ethers");
 const { ethers, upgrades } = require("hardhat");
 const { poolConfig, networks } = require("../scripts/config");
 const { getERC20Created, setupNetwork, getWRAP } = require("../scripts/helper");
+const { getErrorMessage } = require("@lime-development/lime-errors-codes");
 
 let owner, config;
 
@@ -118,5 +119,19 @@ describe("Test MemeFactory", function () {
 
     }
     expect(await nonOwnerFactory.version()).to.equal("2.1.0");
+  });
+
+  it("Get error code", async function () {
+    const wrapedToken = await ethers.getContractAt("IERC20", WrapToken);
+    await wrapedToken.approve(await factory.getAddress(), 0);
+    try {
+      await factory.createERC20("Test", "Test");
+    } catch (error) {
+      const message = error.message || "";
+      const match = message.match(/'([^']+)'/);
+      const code = match?.[1];
+      expect(code).to.equal("F2");
+      expect(getErrorMessage(code, "tech")).to.not.equal("Error code not find.");
+    } 
   });
 })
