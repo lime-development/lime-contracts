@@ -3,7 +3,7 @@ const { poolConfig, networks } = require("./config");
 async function main() {
   const ContractMEME = await ethers.getContractFactory("ERC20MEME");
   const ContractFactory = await ethers.getContractFactory("MemeFactory");
-  const LiquidityFactory = await ethers.getContractFactory("getLiquidityHelper");
+  const LiquidityFactory = await ethers.getContractFactory("GetLiquidityHelper");
   
   const [initialOwner] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", initialOwner.address);
@@ -37,6 +37,7 @@ async function main() {
     authorFee: config.authorFee,
     initialMintCost: config.initialMintCost,
     divider: config.divider,
+    pairedToken: config.token,
     pool: poolConfig
   };
 
