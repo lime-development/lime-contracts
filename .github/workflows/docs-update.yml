@@ -41,7 +41,7 @@ jobs:
 
       - name: Run tokenomics scripts
         run: |
-          for NETWORK in haqq ethereum sepolia bnb base; do
+          for NETWORK in haqq ethereum sepolia bnb base boba; do
             NETWORK=$NETWORK npx hardhat run scripts/tokenomics.js
           done
         env:

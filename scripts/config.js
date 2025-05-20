@@ -71,6 +71,19 @@ const poolConfig = {
       protocolFee: 300,
       factory: "0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7", 
       token: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    },
+    boba: { 
+      name: "boba", 
+      networkID: 288,
+      initialSupply: BigInt(100000 * 10 ** 6), 
+      initialMintCost: BigInt(200 * 10 ** 14),
+      requestedOwnerTokenAmounts : BigInt(440 * 10 ** 18), 
+      requestedAuthorTokenAmounts : BigInt(10 * 10 ** 18), 
+      divider: 3500000,
+      authorFee: 3000,
+      protocolFee: 300,
+      factory: "0x0BE808376Ecb75a5CF9bB6D237d16cd37893d904", 
+      token: "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000",
     }
   };
   

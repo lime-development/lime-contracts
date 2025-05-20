@@ -20,7 +20,10 @@ const FORK_CONFIGS = {
     url: `https://bnb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
   },
   haqq: {
-    url: "https://rpc.eth.haqq.network",
+    url: `https://rpc.eth.haqq.network`,
+  },
+  boba: {
+    url: `https://mainnet.boba.network`, 
   }
 };
 
@@ -83,5 +86,20 @@ module.exports = {
       url: "https://rpc.eth.haqq.network",
       accounts: [process.env.PRIVATE_KEY],
     }
+  },
+  etherscan: {
+    apiKey: {
+      'sepolia': 'empty'
+    },
+    customChains: [
+      {
+        network: "sepolia",
+        chainId: 11155111,
+        urls: {
+          apiURL: "https://eth-sepolia.blockscout.com/api",
+          browserURL: "https://eth-sepolia.blockscout.com"
+        }
+      }
+    ]
   }
 };
