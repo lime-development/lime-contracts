@@ -31,7 +31,7 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
       
-      - name: Run tokenomics scripts
+      - name: Run test
         run: |
           for NETWORK in haqq ethereum sepolia bnb base boba; do
             NETWORK=$NETWORK npx hardhat test
