@@ -42,10 +42,10 @@ contract ERC20MEME is
     using SafeERC20 for IERC20;
 
     /// @notice Token author
-    address author;
+    address public author;
 
     /// @notice Total minted tokens
-    uint256 totalMinted;
+    uint256 public totalMinted;
 
     /// @notice Emitted when new tokens are minted.
     /// @param to Recipient of the minted tokens.
