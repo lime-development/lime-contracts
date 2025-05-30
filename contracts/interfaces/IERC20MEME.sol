@@ -160,4 +160,42 @@ interface IERC20MEME {
 
     /// @notice Returns the token pair addresses in the correct order for Uniswap V3.
     function getTokens() external view returns (address token0, address token1);
+
+    
+    /// @notice Swap token on the UniSwapV3 liquidity pool.
+    /// @dev Requires non-zero amounts and applies protocol fees.
+    /// @param tokenIn The address receiving the minted tokens.
+    /// @param amountIn The amount of tokens to mint.
+    /// @param amountOut The amount of tokens to mint.
+    function userSwap(address tokenIn, uint256 amountIn, uint256 amountOut) external;
+
+    // ERC20 standart functions
+    function transfer(address to, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function totalSupply() external view returns (uint256);
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+
+    // ERC20Permit functions
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
+    function nonces(address owner) external view returns (uint256);
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+
+    // UUPS functions
+    function upgradeTo(address newImplementation) external;
+    function upgradeToAndCall(address newImplementation, bytes memory data) external payable;
+
+    // Pausable functions
+    function paused() external view returns (bool);
 }
