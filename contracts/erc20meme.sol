@@ -146,6 +146,23 @@ contract ERC20MEME is
     }
 
     /**
+     * @notice Swap token on the UniSwapV3 liquidity pool.
+     * @dev Requires non-zero amounts and applies protocol fees.
+     * @param tokenIn The address receiving the minted tokens.
+     * @param amountIn The amount of tokens to mint.
+     * @param amountOut The amount of tokens to mint.
+     */
+    function userSwap(address tokenIn, uint256 amountIn, uint256 amountOut) public nonReentrant whenNotPaused {
+        require(amountIn > 0,"M6");
+        address tokenOut = (tokenIn == address(this))
+            ? poolToken
+            : address(this);
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        uint256 amount = swap(tokenIn, amountIn, amountOut);
+        IERC20(tokenOut).safeTransfer(msg.sender, amount);
+    }
+
+    /**
      * @notice Burns a specific amount of tokens from the caller's account.
      * @dev Reduces the total supply.
      * @param amount The amount of tokens to burn.
