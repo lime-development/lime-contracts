@@ -42,10 +42,10 @@ contract ERC20MEME is
     using SafeERC20 for IERC20;
 
     /// @notice Token author
-    address author;
+    address public author;
 
     /// @notice Total minted tokens
-    uint256 totalMinted;
+    uint256 public totalMinted;
 
     /// @notice Emitted when new tokens are minted.
     /// @param to Recipient of the minted tokens.
@@ -143,6 +143,23 @@ contract ERC20MEME is
         addLiquidity();
 
         emit Mint(to, amount, poolAmount, protocolFee);
+    }
+
+    /**
+     * @notice Swap token on the UniSwapV3 liquidity pool.
+     * @dev Requires non-zero amounts and applies protocol fees.
+     * @param tokenIn The address receiving the minted tokens.
+     * @param amountIn The amount of tokens to mint.
+     * @param amountOut The amount of tokens to mint.
+     */
+    function userSwap(address tokenIn, uint256 amountIn, uint256 amountOut) public nonReentrant whenNotPaused {
+        require(amountIn > 0,"M6");
+        address tokenOut = (tokenIn == address(this))
+            ? poolToken
+            : address(this);
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        uint256 amount = swap(tokenIn, amountIn, amountOut);
+        IERC20(tokenOut).safeTransfer(msg.sender, amount);
     }
 
     /**
