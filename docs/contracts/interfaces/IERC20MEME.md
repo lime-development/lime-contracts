@@ -318,3 +318,105 @@ function getTokens() external view returns (address token0, address token1)
 
 Returns the token pair addresses in the correct order for Uniswap V3.
 
+### userSwap
+
+```solidity
+function userSwap(address tokenIn, uint256 amountIn, uint256 amountOut) external
+```
+
+Swap token on the UniSwapV3 liquidity pool.
+
+_Requires non-zero amounts and applies protocol fees._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenIn | address | The address receiving the minted tokens. |
+| amountIn | uint256 | The amount of tokens to mint. |
+| amountOut | uint256 | The amount of tokens to mint. |
+
+### transfer
+
+```solidity
+function transfer(address to, uint256 amount) external returns (bool)
+```
+
+### transferFrom
+
+```solidity
+function transferFrom(address from, address to, uint256 amount) external returns (bool)
+```
+
+### approve
+
+```solidity
+function approve(address spender, uint256 amount) external returns (bool)
+```
+
+### allowance
+
+```solidity
+function allowance(address owner, address spender) external view returns (uint256)
+```
+
+### balanceOf
+
+```solidity
+function balanceOf(address account) external view returns (uint256)
+```
+
+### totalSupply
+
+```solidity
+function totalSupply() external view returns (uint256)
+```
+
+### name
+
+```solidity
+function name() external view returns (string)
+```
+
+### symbol
+
+```solidity
+function symbol() external view returns (string)
+```
+
+### permit
+
+```solidity
+function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external
+```
+
+### nonces
+
+```solidity
+function nonces(address owner) external view returns (uint256)
+```
+
+### DOMAIN_SEPARATOR
+
+```solidity
+function DOMAIN_SEPARATOR() external view returns (bytes32)
+```
+
+### upgradeTo
+
+```solidity
+function upgradeTo(address newImplementation) external
+```
+
+### upgradeToAndCall
+
+```solidity
+function upgradeToAndCall(address newImplementation, bytes data) external payable
+```
+
+### paused
+
+```solidity
+function paused() external view returns (bool)
+```
+
