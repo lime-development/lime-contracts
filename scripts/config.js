@@ -10,10 +10,9 @@ const poolConfig = {
       name: "haqq",
       networkID: 11235,
       initialSupply: BigInt(100000 * 10 ** 6), 
-      initialMintCost: BigInt(1000 * 10 ** 18),
+      initialMintCost: BigInt(100 * 10 ** 18),
       requestedOwnerTokenAmounts : BigInt(1500 * 10 ** 18), 
       requestedAuthorTokenAmounts : BigInt(200 * 10 ** 18), 
-      initialMintCost: BigInt(100 * 10 ** 18),
       divider: 35,
       authorFee: 3000,
       protocolFee: 300,
@@ -84,6 +83,19 @@ const poolConfig = {
       protocolFee: 300,
       factory: "0x0BE808376Ecb75a5CF9bB6D237d16cd37893d904", 
       token: "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000",
+    },
+    OG: { 
+      name: "0G", 
+      networkID: 16600,
+      initialSupply: BigInt(100000 * 10 ** 6), 
+      initialMintCost: BigInt(100 * 10 ** 18),
+      requestedOwnerTokenAmounts : BigInt(1500 * 10 ** 18), 
+      requestedAuthorTokenAmounts : BigInt(200 * 10 ** 18), 
+      divider: 35,
+      authorFee: 3000,
+      protocolFee: 300,
+      factory: "0x89e23706EE09a9f490638C398157827FDF9f4021",
+      token: "0x26fa124A76F269586c516faa6Ac229B25e173de3",
     }
   };
   
