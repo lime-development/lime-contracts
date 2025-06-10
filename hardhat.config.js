@@ -24,6 +24,13 @@ const FORK_CONFIGS = {
   },
   boba: {
     url: `https://mainnet.boba.network`, 
+  },
+  OG: {
+    url: `https://rpc.ankr.com/0g_galileo_testnet_evm`,
+    rateLimit: {
+      maxRequests: 1,
+      perMilliseconds: 1000
+    }
   }
 };
 
@@ -63,6 +70,15 @@ module.exports = {
             runs: 1000,
           },
         }
+      },
+      {
+        version: "0.5.17",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+          },
+        }
       }
     ],
   },
@@ -72,7 +88,6 @@ module.exports = {
         url: FORK_CONFIGS[network].url,
         blockNumber: FORK_CONFIGS[network].blockNumber,
       },
-
     },
     'haqq-testedge2': {
       url: `https://rpc.eth.testedge2.haqq.network`,
@@ -85,6 +100,14 @@ module.exports = {
     haqq: {
       url: "https://rpc.eth.haqq.network",
       accounts: [process.env.PRIVATE_KEY],
+    },
+    OG: {
+      url: `https://rpc.ankr.com/0g_galileo_testnet_evm`,
+      accounts: [process.env.PRIVATE_KEY],
+      rateLimit: {
+        maxRequests: 1,
+        perMilliseconds: 1000
+      }
     }
   },
   etherscan: {
