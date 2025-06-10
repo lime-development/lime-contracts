@@ -137,6 +137,24 @@ _Requires non-zero amounts and applies protocol fees._
 | to | address | The address receiving the minted tokens. |
 | amount | uint256 | The amount of tokens to mint. |
 
+### userSwap
+
+```solidity
+function userSwap(address tokenIn, uint256 amountIn, uint256 amountOut) public
+```
+
+Swap token on the UniSwapV3 liquidity pool.
+
+_Requires non-zero amounts and applies protocol fees._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenIn | address | The address receiving the minted tokens. |
+| amountIn | uint256 | The amount of tokens to mint. |
+| amountOut | uint256 | The amount of tokens to mint. |
+
 ### burn
 
 ```solidity
