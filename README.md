@@ -58,3 +58,71 @@ npx hardhat run scripts/deploy.js --network your_network
 ```
 slither .
 ```
+
+## Updating Meme Contract
+
+The `update-meme.js` script is used to update the meme contract implementation. Before running the script, you need to set the `FACTORY_ADDRESS` environment variable with the factory contract address.
+
+### Usage Example:
+
+1. Setting up the environment variable:
+```bash
+# Temporary setup for current session
+export FACTORY_ADDRESS=0x08B298F85aF3D5e01e5bF700E23eE28e3690c29f
+
+# Or via .env file
+echo "FACTORY_ADDRESS=0x08B298F85aF3D5e01e5bF700E23eE28e3690c29f" >> .env
+```
+
+2. Running the script:
+```bash
+# For local network
+npx hardhat run scripts/update-meme.js
+
+# For specific network
+npx hardhat run scripts/update-meme.js --network sepolia
+```
+
+The script will perform the following actions:
+1. Deploy a new version of the ERC20MEME contract
+2. Connect to the existing factory using the address from the environment variable
+3. Update the implementation in the factory
+4. Attempt to update the first 10 tokens in the factory
+
+## Updating Factory Configuration
+
+The `update-config.js` script is used to update the factory contract configuration. Before running the script, you need to set the `FACTORY_ADDRESS` environment variable with the factory contract address.
+
+### Usage Example:
+
+1. Setting up the environment variable:
+```bash
+# Temporary setup for current session
+export FACTORY_ADDRESS=0x08B298F85aF3D5e01e5bF700E23eE28e3690c29f
+
+# Or via .env file
+echo "FACTORY_ADDRESS=0x08B298F85aF3D5e01e5bF700E23eE28e3690c29f" >> .env
+```
+
+2. Running the script:
+```bash
+# For specific network
+npx hardhat run scripts/update-config.js --network sepolia
+```
+
+The script will perform the following actions:
+1. Connect to the existing factory using the address from the environment variable
+2. Retrieve the current configuration
+3. Create a new configuration based on the network settings while preserving the existing liquidity settings
+4. Update the factory configuration
+5. Verify the configuration update
+
+Note: The script requires network-specific configuration in the `config.js` file, including:
+- Factory address
+- Initial supply
+- Protocol fee
+- Author fee
+- Initial mint cost
+- Divider
+- Paired token
+- Pool configuration
