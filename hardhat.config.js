@@ -84,6 +84,7 @@ module.exports = {
   },
   networks: {
     hardhat: {
+      initialBaseFeePerGas: 0,
       forking: {
         url: FORK_CONFIGS[network].url,
         blockNumber: FORK_CONFIGS[network].blockNumber,
