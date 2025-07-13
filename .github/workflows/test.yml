@@ -33,7 +33,7 @@ jobs:
       
       - name: Run test
         run: |
-          for NETWORK in haqq ethereum sepolia bnb base boba; do
+          for NETWORK in haqq ethereum sepolia bnb base boba bobaTestnet; do
             NETWORK=$NETWORK npx hardhat test
           done
         env:
