@@ -102,6 +102,10 @@ module.exports = {
       url: "https://rpc.eth.haqq.network",
       accounts: [process.env.PRIVATE_KEY],
     },
+    bobaTestnet: {
+      url: "https://sepolia.boba.network",
+      accounts: [process.env.PRIVATE_KEY],
+    },
     OG: {
       url: `https://rpc.ankr.com/0g_galileo_testnet_evm`,
       accounts: [process.env.PRIVATE_KEY],
