@@ -95,7 +95,7 @@ const poolConfig = {
       authorFee: 3000,
       protocolFee: 300,
       factory: "0xD55BE7fA1BFD4Ed7a84819425ED80bC76012A416", 
-      token: "0x4200000000000000000000000000000000000023",
+      token: "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000",
     },
     OG: { 
       name: "0G", 

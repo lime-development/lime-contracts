@@ -25,6 +25,9 @@ const FORK_CONFIGS = {
   boba: {
     url: `https://mainnet.boba.network`, 
   },
+  bobaTestnet: {
+    url: "https://sepolia.boba.network",
+  },
   OG: {
     url: `https://rpc.ankr.com/0g_galileo_testnet_evm`,
     rateLimit: {
