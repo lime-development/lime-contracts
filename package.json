@@ -1,7 +1,7 @@
 {
   "name": "Lime",
   "version": "1.0.0",
-  "description": "Lime is a decentralized platform designed to enable anyone to launch their own meme coins",
+  "description": "Lime is a decentralized platform designed to enable anyone to launch their own social and meme coins",
   "main": "index.js",
   "scripts": {
     "test": "npx hardhat test"
@@ -9,9 +9,10 @@
   "author": "VorobevSA",
   "license": "MIT License (Non-Commercial Use Only)",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^6.0.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.0",
     "ethers": "^6.13.0",
+    "hardhat-gas-reporter": "^2.3.0",
     "solidity-docgen": "^0.6.0-beta.36"
   },
   "dependencies": {
@@ -27,7 +28,6 @@
     "cookie": "^1.0.2",
     "decimal.js": "^10.5.0",
     "hardhat": "^2.22.19",
-    "npm": "^11.3.0",
     "solc": "^0.8.30"
   }
 }

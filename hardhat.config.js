@@ -25,6 +25,9 @@ const FORK_CONFIGS = {
   boba: {
     url: `https://mainnet.boba.network`, 
   },
+  bobaTestnet: {
+    url: "https://sepolia.boba.network",
+  },
   OG: {
     url: `https://rpc.ankr.com/0g_galileo_testnet_evm`,
     rateLimit: {
@@ -84,6 +87,7 @@ module.exports = {
   },
   networks: {
     hardhat: {
+      initialBaseFeePerGas: 0,
       forking: {
         url: FORK_CONFIGS[network].url,
         blockNumber: FORK_CONFIGS[network].blockNumber,
@@ -99,6 +103,10 @@ module.exports = {
     },
     haqq: {
       url: "https://rpc.eth.haqq.network",
+      accounts: [process.env.PRIVATE_KEY],
+    },
+    bobaTestnet: {
+      url: "https://sepolia.boba.network",
       accounts: [process.env.PRIVATE_KEY],
     },
     OG: {
