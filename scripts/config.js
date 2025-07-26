@@ -86,7 +86,7 @@ const poolConfig = {
     },
     bobaTestnet: { 
       name: "bobaTestnet", 
-      networkID: 288,
+      networkID: 28882,
       initialSupply: BigInt(100000 * 10 ** 6), 
       initialMintCost: BigInt(200 * 10 ** 14),
       requestedOwnerTokenAmounts : BigInt(440 * 10 ** 18), 
