@@ -9,6 +9,7 @@ on:
     paths:
       - '**/*.sol'
       - '**/*.js'
+      - '**/*.json'
 
 jobs:
   test:
