@@ -26,4 +26,4 @@
 - [bnb](tokenomics/bnb)
 - [base](tokenomics/base)
 
-_Updated at 2025-07-12 12:09:48_
+_Updated at 2025-07-26 12:12:38_
