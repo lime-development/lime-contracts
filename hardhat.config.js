@@ -37,7 +37,7 @@ const FORK_CONFIGS = {
   }
 };
 
-// Проверяем, существует ли указанная сеть
+// Check if the specified network exists
 if (!FORK_CONFIGS[network]) {
   throw new Error(`❌ Unknown network: ${network}`);
 }

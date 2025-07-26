@@ -18,7 +18,10 @@ async function main() {
   await meme.waitForDeployment();
   console.log(`ERC20MEME deployed to: ${await meme.getAddress()}`);
 
-  const existingFactoryAddress = "0x08B298F85aF3D5e01e5bF700E23eE28e3690c29f";
+  const existingFactoryAddress = process.env.FACTORY_ADDRESS;
+  if (!existingFactoryAddress) {
+    throw new Error("FACTORY_ADDRESS environment variable is not set");
+  }
   const instance = await ethers.getContractAt("MemeFactory", existingFactoryAddress);
   console.log(`Connected to existing MemeFactory at: ${instance.target}`);
   console.log(`Old Meme implementation at: ${await instance.implementation()}`);
